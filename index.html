@@ -179,104 +179,93 @@
             return nodeEntity;
         }
 
-       let lines = []; // Array to store line entities
-
-function createLine(start, end) {
-    const line = document.createElement('a-entity');
-    line.setAttribute('line', {
-        start: start,
-        end: end,
-        color: '#666666',
-        opacity: 0.5
-    });
-    return line;
-}
-
-function createCircularLayout() {
-    const container = document.querySelector('#nodes');
-    container.innerHTML = ''; // Clear existing nodes
-    lines = []; // Reset the lines array
-
-    const nodeMap = new Map();
-    const radius = 15; // Increased radius for more space
-
-    // Create item nodes in outer circle
-    const itemAngleStep = (2 * Math.PI) / items.length;
-    items.forEach((item, index) => {
-        const angle = itemAngleStep * index;
-        const x = radius * Math.cos(angle);
-        const z = radius * Math.sin(angle);
-        const y = 0;
-
-        const node = createNode(x, y, z, item.title);
-        container.appendChild(node);
-        nodeMap.set(item.id, { x, y, z });
-    });
-
-    // Create tag nodes in inner circle
-    const tagRadius = radius * 0.5;
-    const tagAngleStep = (2 * Math.PI) / tags.length;
-    tags.forEach((tag, index) => {
-        const angle = tagAngleStep * index;
-        const x = tagRadius * Math.cos(angle);
-        const z = tagRadius * Math.sin(angle);
-        const y = 0;
-
-        const node = createNode(x, y, z, tag, true);
-        container.appendChild(node);
-        nodeMap.set(tag, { x, y, z });
-    });
-
-    // Create connections
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.id);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                );
-                container.appendChild(line);
-                lines.push({ line, itemPos, tagPos }); // Store line reference
-            }
-        });
-    });
-}
-
-function updateLines() {
-    // Update the lines to reflect the new positions of nodes
-    lines.forEach(lineData => {
-        const { line, itemPos, tagPos } = lineData;
-        line.setAttribute('line', {
-            start: `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-            end: `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-        });
-    });
-}
-
-function togglePhysics() {
-    physicsEnabled = !physicsEnabled;
-    const nodes = document.querySelectorAll('#nodes a-entity');
-    if (physicsEnabled) {
-        // Apply random forces to nodes
-        nodes.forEach(node => {
-            const randomX = (Math.random() - 0.5) * 30;
-            const randomY = (Math.random() - 0.5) * 30;
-            const randomZ = (Math.random() - 0.5) * 30;
-            node.setAttribute('animation', {
-                property: 'position',
-                to: `${randomX} ${randomY} ${randomZ}`,
-                dur: 3000,
-                easing: 'easeInOutQuad'
+      function createLine(start, end) {
+            const line = document.createElement('a-entity');
+            line.setAttribute('line', {
+                start: start,
+                end: end,
+                color: '#666666',
+                opacity: 0.5
             });
+            return line;
+        }
+
+        function createCircularLayout() {
+            const container = document.querySelector('#nodes');
+            container.innerHTML = ''; // Clear existing nodes
+            
+            const nodeMap = new Map();
+            const radius = 15; // Increased radius for more space
+            
+            // Create item nodes in outer circle
+            const itemAngleStep = (2 * Math.PI) / items.length;
+            items.forEach((item, index) => {
+                const angle = itemAngleStep * index;
+                const x = radius * Math.cos(angle);
+                const z = radius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, item.title);
+                container.appendChild(node);
+                nodeMap.set(item.id, {x, y, z});
+            });
+
+            // Create tag nodes in inner circle
+            const tagRadius = radius * 0.5;
+            const tagAngleStep = (2 * Math.PI) / tags.length;
+            tags.forEach((tag, index) => {
+                const angle = tagAngleStep * index;
+                const x = tagRadius * Math.cos(angle);
+                const z = tagRadius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, tag, true);
+                container.appendChild(node);
+                nodeMap.set(tag, {x, y, z});
+            });
+
+            // Create connections
+            items.forEach(item => {
+                const itemPos = nodeMap.get(item.id);
+                item.tags.forEach(tag => {
+                    const tagPos = nodeMap.get(tag);
+                    if (itemPos && tagPos) {
+                        const line = createLine(
+                            ${itemPos.x} ${itemPos.y} ${itemPos.z},
+                            ${tagPos.x} ${tagPos.y} ${tagPos.z}
+                        );
+                        container.appendChild(line);
+                    }
+                });
+            });
+        }
+
+        // Initialize layout after scene loads
+        document.querySelector('a-scene').addEventListener('loaded', function () {
+            console.log('Scene loaded, creating layout...');
+            createCircularLayout();
         });
-    } else {
-        // Reset layout and update the lines
-        createCircularLayout();
-        updateLines();
-    }
-}
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            if (physicsEnabled) {
+                // Apply random forces to nodes
+                const nodes = document.querySelectorAll('#nodes a-entity');
+                nodes.forEach(node => {
+                    const randomX = (Math.random() - 0.5) * 30;
+                    const randomY = (Math.random() - 0.5) * 30;
+                    const randomZ = (Math.random() - 0.5) * 30;
+                    node.setAttribute('animation', {
+                        property: 'position',
+                        to: ${randomX} ${randomY} ${randomZ},
+                        dur: 3000,
+                        easing: 'easeInOutQuad'
+                    });
+                });
+            } else {
+                createCircularLayout();
+            }
+        }
     </script>
 </body>
 </html>
