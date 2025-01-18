@@ -192,57 +192,61 @@
         return line;
     }
 
-    function createCircularLayout() {
-        const container = document.querySelector('#nodes');
-        container.innerHTML = ''; // Clear existing nodes
+   function createVerticalCircleLayout() {
+    const container = document.querySelector('#nodes');
+    container.innerHTML = ''; // Clear existing nodes
 
-        const nodeMap = new Map();
-        const radius = 15; // Increased radius for more space
+    const nodeMap = new Map();
+    const radius = 10; // Radius of the circle
+    const angleStep = (Math.PI * 2) / items.length; // Angle between each item node
 
-        // Create item nodes in outer circle
-        const itemAngleStep = (2 * Math.PI) / items.length;
-        items.forEach((item, index) => {
-            const angle = itemAngleStep * index;
-            const x = radius * Math.cos(angle);
-            const z = radius * Math.sin(angle);
-            const y = 0;
+    // Define the angle offset to tilt the circle upright
+    const angleOffset = Math.PI / 2;  // Rotating 90 degrees to make it upright
 
-            const node = createNode(x, y, z, item.title);
-            container.appendChild(node);
-            nodeMap.set(item.id, {x, y, z});
+    // Create item nodes in a circular layout
+    items.forEach((item, index) => {
+        const angle = angleStep * index + angleOffset; // Add the angle offset for vertical rotation
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        const z = 0;
+
+        const node = createNode(x, y, z, item.title);
+        container.appendChild(node);
+        nodeMap.set(item.id, { x, y, z });
+    });
+
+    // Create tag nodes in a circular layout (behind items)
+    tags.forEach((tag, index) => {
+        const angle = angleStep * index + angleOffset;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        const z = 5; // Tags are slightly behind the items
+
+        const node = createNode(x, y, z, tag, true);
+        container.appendChild(node);
+        nodeMap.set(tag, { x, y, z });
+    });
+
+    // Create connections (edges)
+    const edges = [];
+    items.forEach(item => {
+        const itemPos = nodeMap.get(item.id);
+        item.tags.forEach(tag => {
+            const tagPos = nodeMap.get(tag);
+            if (itemPos && tagPos) {
+                const line = createLine(
+                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
+                );
+                edges.push(line);
+                container.appendChild(line);
+            }
         });
+    });
 
-        // Create tag nodes in inner circle
-        const tagRadius = radius * 0.5;
-        const tagAngleStep = (2 * Math.PI) / tags.length;
-        tags.forEach((tag, index) => {
-            const angle = tagAngleStep * index;
-            const x = tagRadius * Math.cos(angle);
-            const z = tagRadius * Math.sin(angle);
-            const y = 0;
-
-            const node = createNode(x, y, z, tag, true);
-            container.appendChild(node);
-            nodeMap.set(tag, {x, y, z});
-        });
-
-        // Create connections (edges)
-        const edges = [];
-        items.forEach(item => {
-            const itemPos = nodeMap.get(item.id);
-            item.tags.forEach(tag => {
-                const tagPos = nodeMap.get(tag);
-                if (itemPos && tagPos) {
-                    const line = createLine(
-                        `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                        `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                    );
-                    edges.push(line);
-                    container.appendChild(line);
-                }
-            });
-        });
-
+    // Store edges in a global variable to keep them intact when physics is toggled
+    window.edges = edges;
+}
         // Store edges in a global variable to keep them intact when physics is toggled
         window.edges = edges;
     }
