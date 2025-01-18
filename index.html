@@ -213,7 +213,7 @@
             return line;
         }
 
-     function createCircularLayout() {
+    function createCircularLayout() {
     const container = document.querySelector('#nodes');
     container.innerHTML = ''; // Clear existing nodes
     
@@ -258,6 +258,13 @@
     });
 
     // Create connections
+    createConnections(nodeMap);
+}
+
+function createConnections(nodeMap) {
+    const container = document.querySelector('#nodes');
+    
+    // Create lines between items and tags
     items.forEach(item => {
         const itemPos = nodeMap.get(item.id);
         item.tags.forEach(tag => {
@@ -273,14 +280,7 @@
     });
 }
 
-
-        // Initialize layout after scene loads
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            console.log('Scene loaded, creating layout...');
-            createCircularLayout();
-        });
-
-    function togglePhysics() {
+function togglePhysics() {
     physicsEnabled = !physicsEnabled;
     const container = document.querySelector('#nodes');
     
@@ -327,19 +327,7 @@ function updateLines() {
     });
 
     // Create new lines between items and their tags
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.title);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                );
-                container.appendChild(line);
-            }
-        });
-    });
+    createConnections(nodeMap);
 }
 
 
