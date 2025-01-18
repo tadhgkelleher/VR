@@ -1,7 +1,6 @@
-
-
 <!DOCTYPE html>
 <html>
+<!-- [Previous head and style sections remain the same] -->
 <head>
     <title>VR Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
@@ -44,7 +43,7 @@
         <a-sky color="#1a1a1a"></a-sky>
         <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
         
-        <!-- Camera - Moved closer -->
+        <!-- Camera -->
         <a-entity position="0 1.6 8">
             <a-camera id="main-camera" look-controls wasd-controls>
                 <a-cursor color="#4CC3D9"></a-cursor>
@@ -59,11 +58,10 @@
         <a-entity id="nodes"></a-entity>
     </a-scene>
    <script>
-        // Camera zoom controls
+        // [Previous camera zoom controls remain the same]
         const camera = document.querySelector('#main-camera');
         const cameraEl = camera.getObject3D('camera');
 
-        // Adjust FOV for zooming
         function adjustZoom(delta) {
             if (cameraEl) {
                 const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta));
@@ -84,7 +82,6 @@
             adjustZoom(event.deltaY > 0 ? 5 : -5);
         });
     </script>
- 
     <script>
         // Full dataset from original
         const items = [
@@ -175,7 +172,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-          const uniqueTags = new Set();
+           const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -186,13 +183,79 @@
         let nodeElements = new Map();
         let simulation;
 
+        function createForceSimulation() {
+            const nodes = [];
+            const links = [];
+
+            // Create nodes with very small initial spread
+            items.forEach(item => {
+                nodes.push({
+                    id: item.id,
+                    title: item.title,
+                    isTag: false,
+                    x: Math.random() * 2 - 1, // Reduced initial spread
+                    y: Math.random() * 2 - 1,
+                    z: Math.random() * 2 - 1
+                });
+            });
+
+            tags.forEach(tag => {
+                nodes.push({
+                    id: tag,
+                    title: tag,
+                    isTag: true,
+                    x: Math.random() * 2 - 1, // Reduced initial spread
+                    y: Math.random() * 2 - 1,
+                    z: Math.random() * 2 - 1
+                });
+            });
+
+            // Create links
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    links.push({
+                        source: nodes.find(n => n.id === item.id),
+                        target: nodes.find(n => n.id === tag)
+                    });
+                });
+            });
+
+            // Create simulation with gentler forces
+            const sim = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .distance(2)        // Shorter link distance
+                    .strength(0.2))     // Weaker link strength
+                .force("charge", d3.forceManyBody()
+                    .strength(-1)       // Much weaker repulsion
+                    .distanceMax(10))   // Limit the range of repulsion
+                .force("center", d3.forceCenter(0, 0)
+                    .strength(0.1))     // Gentle centering force
+                .force("collide", d3.forceCollide(1)
+                    .strength(0.5))     // Moderate collision strength
+                .velocityDecay(0.7)     // Higher decay for slower movement
+                .alphaMin(0.001)        // Lower minimum alpha for smoother simulation
+                .alphaDecay(0.02);      // Slower decay for more controlled movement
+
+            // Add containment force to keep nodes within bounds
+            sim.force("box", () => {
+                const bound = 6; // Maximum distance from center
+                nodes.forEach(node => {
+                    if (Math.abs(node.x) > bound) node.x = Math.sign(node.x) * bound;
+                    if (Math.abs(node.y) > bound) node.y = Math.sign(node.y) * bound;
+                    if (Math.abs(node.z) > bound) node.z = Math.sign(node.z) * bound;
+                });
+            });
+
+            return sim;
+        }
+
+        // [Previous createNode, createLine, and updateLines functions remain the same]
         function createNode(x, y, z, title, isTag = false, id) {
             const nodeEntity = document.createElement('a-entity');
             nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
             nodeEntity.setAttribute('data-id', id);
 
             const sphere = document.createElement('a-sphere');
-            // Reduced sphere sizes for better VR viewing
             sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
             sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
             nodeEntity.appendChild(sphere);
@@ -200,7 +263,6 @@
             const text = document.createElement('a-text');
             text.setAttribute('value', title);
             text.setAttribute('position', '0 0.8 0');
-            // Adjusted text scale for better VR readability
             text.setAttribute('scale', '0.5 0.5 0.5');
             text.setAttribute('align', 'center');
             text.setAttribute('color', 'white');
@@ -254,7 +316,6 @@
             connections = [];
             nodeElements.clear();
             
-            // Reduced radius for better VR viewing
             const radius = 6;
             const height = 0;
             
@@ -290,7 +351,6 @@
                         const endPos = tagNode.getAttribute('position');
                         const line = createLine(
                             `${startPos.x} ${startPos.y} ${startPos.z}`,
-                            `${endPos.x} ${endPos.y} ${endPos.z}`,
                             item.id,
                             tag
                         );
@@ -298,51 +358,6 @@
                     }
                 });
             });
-        }
-
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
-
-            items.forEach(item => {
-                nodes.push({
-                    id: item.id,
-                    title: item.title,
-                    isTag: false,
-                    // Reduced initial spread for physics simulation
-                    x: Math.random() * 10 - 5,
-                    y: Math.random() * 10 - 5,
-                    z: Math.random() * 10 - 5
-                });
-            });
-
-            tags.forEach(tag => {
-                nodes.push({
-                    id: tag,
-                    title: tag,
-                    isTag: true,
-                    x: Math.random() * 10 - 5,
-                    y: Math.random() * 10 - 5,
-                    z: Math.random() * 10 - 5
-                });
-            });
-
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
-            });
-
-            return d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).distance(4))
-                .force("charge", d3.forceManyBody().strength(-20))
-                .force("center", d3.forceCenter(0, 0))
-                .force("collide", d3.forceCollide(1.5))
-                .velocityDecay(0.3)
-                .alphaTarget(0.1);
         }
 
         function updateNodesFromSimulation() {
