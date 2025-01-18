@@ -147,7 +147,11 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-      // Collect all unique tags
+<script>
+    // Full dataset from original (same as your previous data)
+    const items = [...];  // Keep the same dataset as in the original code
+
+    // Collect all unique tags
     const uniqueTags = new Set();
     items.forEach(item => {
         item.tags.forEach(tag => uniqueTags.add(tag));
@@ -203,7 +207,7 @@
             const angle = itemAngleStep * index;
             const x = radius * Math.cos(angle);
             const z = radius * Math.sin(angle);
-            const y = 0;
+            const y = 0;  // Ensure the nodes are in the x-z plane (y = 0)
 
             const node = createNode(x, y, z, item.title);
             container.appendChild(node);
@@ -217,7 +221,7 @@
             const angle = tagAngleStep * index;
             const x = tagRadius * Math.cos(angle);
             const z = tagRadius * Math.sin(angle);
-            const y = 0;
+            const y = 0;  // Ensure the tags are flat as well (y = 0)
 
             const node = createNode(x, y, z, tag, true);
             container.appendChild(node);
@@ -273,6 +277,7 @@
             createCircularLayout(); // This will maintain the edges
         }
     }
-</script
+</script>
+
 </body>
 </html>
