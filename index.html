@@ -190,55 +190,65 @@
             return line;
         }
 
-        function createCircularLayout() {
-            const container = document.querySelector('#nodes');
-            container.innerHTML = ''; // Clear existing nodes
-            
-            const nodeMap = new Map();
-            const radius = 15; // Increased radius for more space
-            
-            // Create item nodes in outer circle
-            const itemAngleStep = (2 * Math.PI) / items.length;
-            items.forEach((item, index) => {
-                const angle = itemAngleStep * index;
-                const x = radius * Math.cos(angle);
-                const z = radius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, item.title);
-                container.appendChild(node);
-                nodeMap.set(item.id, {x, y, z});
-            });
+      function createCircularLayout() {
+    const container = document.querySelector('#nodes');
+    container.innerHTML = ''; // Clear existing nodes
+    
+    const nodeMap = new Map();
+    const radius = 15; // Increased radius for more space
+    
+    // Get the camera position to position the circle in front of the viewer
+    const camera = document.querySelector('[camera]');
+    const cameraPos = camera.getAttribute('position');
+    const cameraX = cameraPos.x;
+    const cameraY = cameraPos.y;
+    const cameraZ = cameraPos.z;
 
-            // Create tag nodes in inner circle
-            const tagRadius = radius * 0.5;
-            const tagAngleStep = (2 * Math.PI) / tags.length;
-            tags.forEach((tag, index) => {
-                const angle = tagAngleStep * index;
-                const x = tagRadius * Math.cos(angle);
-                const z = tagRadius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, tag, true);
-                container.appendChild(node);
-                nodeMap.set(tag, {x, y, z});
-            });
+    // Set the circle slightly in front of the camera
+    const circleZ = cameraZ - 20; // Change the distance as needed
 
-            // Create connections
-            items.forEach(item => {
-                const itemPos = nodeMap.get(item.id);
-                item.tags.forEach(tag => {
-                    const tagPos = nodeMap.get(tag);
-                    if (itemPos && tagPos) {
-                        const line = createLine(
-                            `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                            `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                        );
-                        container.appendChild(line);
-                    }
-                });
-            });
-        }
+    // Create item nodes in outer circle
+    const itemAngleStep = (2 * Math.PI) / items.length;
+    items.forEach((item, index) => {
+        const angle = itemAngleStep * index;
+        const x = cameraX + radius * Math.cos(angle);
+        const z = circleZ + radius * Math.sin(angle);
+        const y = cameraY; // Keep y at camera level
+
+        const node = createNode(x, y, z, item.title);
+        container.appendChild(node);
+        nodeMap.set(item.id, {x, y, z});
+    });
+
+    // Create tag nodes in inner circle
+    const tagRadius = radius * 0.5;
+    const tagAngleStep = (2 * Math.PI) / tags.length;
+    tags.forEach((tag, index) => {
+        const angle = tagAngleStep * index;
+        const x = cameraX + tagRadius * Math.cos(angle);
+        const z = circleZ + tagRadius * Math.sin(angle);
+        const y = cameraY; // Keep y at camera level
+
+        const node = createNode(x, y, z, tag, true);
+        container.appendChild(node);
+        nodeMap.set(tag, {x, y, z});
+    });
+
+    // Create connections
+    items.forEach(item => {
+        const itemPos = nodeMap.get(item.id);
+        item.tags.forEach(tag => {
+            const tagPos = nodeMap.get(tag);
+            if (itemPos && tagPos) {
+                const line = createLine(
+                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
+                );
+                container.appendChild(line);
+            }
+        });
+    });
+}
 
         // Initialize layout after scene loads
         document.querySelector('a-scene').addEventListener('loaded', function () {
