@@ -298,44 +298,39 @@
     connections = [];
     nodeElements.clear();
     
-    const radius = 15;
-    const height = 0; // We'll keep height at 0 to make it in front of you
-    const wheelTilt = Math.PI / 2; // The angle to tilt the wheel upright (90 degrees)
+    const radius = 15; // Radius of the circle
+    const height = 0; // Height for vertical placement (you can adjust if needed)
     
-    // Create item nodes
+    // Create item nodes (circle in the vertical plane)
     const itemAngleStep = (2 * Math.PI) / items.length;
     items.forEach((item, index) => {
         const angle = itemAngleStep * index;
-        const x = radius * Math.cos(angle); // X-position in the circle
-        const z = radius * Math.sin(angle); // Z-position in the circle
-        const y = height; // Constant height at zero to keep the nodes in front of you
-
-        // Apply a tilt (rotate the circle around the X-axis)
-        const rotatedX = x * Math.cos(wheelTilt) - z * Math.sin(wheelTilt);
-        const rotatedZ = x * Math.sin(wheelTilt) + z * Math.cos(wheelTilt);
         
-        const node = createNode(rotatedX, y, rotatedZ, item.title, false, item.id);
+        // Calculate positions for the vertical circle
+        const x = radius * Math.cos(angle); // Position on the X-axis (left/right)
+        const z = radius * Math.sin(angle); // Position on the Z-axis (front/back)
+        const y = height; // Keep the same height for the nodes (0 means in front of you)
+
+        const node = createNode(x, y, z, item.title, false, item.id);
         container.appendChild(node);
     });
 
-    // Create tag nodes
-    const tagRadius = radius * 0.5;
+    // Create tag nodes (circle in the vertical plane)
+    const tagRadius = radius * 0.5; // Tags a bit closer to the center
     const tagAngleStep = (2 * Math.PI) / tags.length;
     tags.forEach((tag, index) => {
         const angle = tagAngleStep * index;
-        const x = tagRadius * Math.cos(angle); // X-position in the circle
-        const z = tagRadius * Math.sin(angle); // Z-position in the circle
-        const y = height; // Constant height at zero to keep the nodes in front of you
-
-        // Apply a tilt (rotate the circle around the X-axis)
-        const rotatedX = x * Math.cos(wheelTilt) - z * Math.sin(wheelTilt);
-        const rotatedZ = x * Math.sin(wheelTilt) + z * Math.cos(wheelTilt);
         
-        const node = createNode(rotatedX, y, rotatedZ, tag, true, tag);
+        // Calculate positions for the vertical circle of tags
+        const x = tagRadius * Math.cos(angle);
+        const z = tagRadius * Math.sin(angle);
+        const y = height; // Same height for consistency
+
+        const node = createNode(x, y, z, tag, true, tag);
         container.appendChild(node);
     });
 
-    // Create connections
+    // Create connections (links between items and tags)
     items.forEach(item => {
         const itemNode = nodeElements.get(item.id);
         item.tags.forEach(tag => {
@@ -354,6 +349,7 @@
         });
     });
 }
+
 
 
 
