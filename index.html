@@ -4,29 +4,6 @@
     <title>VR Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
-    <script>
-    // Set up zoom functionality
-    const camera = document.querySelector('[camera]'); // Assuming your camera is defined with a camera component
-
-    let zoomLevel = 10; // Default zoom level (distance from origin)
-    const zoomSpeed = 2; // Speed at which zoom happens
-    const minZoom = 5; // Minimum zoom distance
-    const maxZoom = 30; // Maximum zoom distance
-
-    // Event listener for mouse wheel to zoom in/out
-    window.addEventListener('wheel', function (event) {
-        if (event.deltaY < 0) {
-            // Scroll up (zoom in)
-            zoomLevel = Math.max(minZoom, zoomLevel - zoomSpeed); // Prevent zooming too close
-        } else if (event.deltaY > 0) {
-            // Scroll down (zoom out)
-            zoomLevel = Math.min(maxZoom, zoomLevel + zoomSpeed); // Prevent zooming too far
-        }
-
-        // Apply the new zoom level to the camera position (on the Z-axis)
-        camera.setAttribute('position', 0 1 ${zoomLevel});
-    });
-</script>
     <style>
         .controls {
             position: fixed;
@@ -83,7 +60,7 @@
     <script>
         // Full dataset from original
         const items = [
-            { "id": 2, "title": "Trouble", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/LqgQawC0qCc" },
+             { "id": 2, "title": "Trouble", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/LqgQawC0qCc" },
   { "id": 3, "title": "Beautiful Goodbye", "tags": ["Cilla Black", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/I1WocWuNLVg" },
   { "id": 4, "title": "Single", "tags": ["Natasha Bedingfield", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/3kXZc_isrBA" },
   { "id": 5, "title": "It's Nice to Be Nice", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/ap7Bklv8pB0" },
@@ -167,7 +144,6 @@
   { "id": 83, "title": "Robbie Malone", "tags": ["Artist", "David Gray"] },
   { "id": 84, "title": "Pete Wingfield", "tags": ["Producer", "Paul McCartney", "Everly Bros", "Van Morrison"] },
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
-      
         ];
 
         // Collect all unique tags
@@ -181,7 +157,7 @@
 
         function createNode(x, y, z, title, isTag = false) {
             const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', ${x} ${y} ${z});
+            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
 
             // Create sphere for node
             const sphere = document.createElement('a-sphere');
@@ -213,66 +189,55 @@
             return line;
         }
 
-     function createCircularLayout() {
-    const container = document.querySelector('#nodes');
-    container.innerHTML = ''; // Clear existing nodes
-    
-    const nodeMap = new Map();
-    const radius = 15; // Increased radius for more space
-    
-    // Get the camera position to position the circle in front of the viewer
-    const camera = document.querySelector('[camera]');
-    const cameraPos = camera.getAttribute('position');
-    const cameraX = cameraPos.x;
-    const cameraY = cameraPos.y;
-    const cameraZ = cameraPos.z;
+        function createCircularLayout() {
+            const container = document.querySelector('#nodes');
+            container.innerHTML = ''; // Clear existing nodes
+            
+            const nodeMap = new Map();
+            const radius = 15; // Increased radius for more space
+            
+            // Create item nodes in outer circle
+            const itemAngleStep = (2 * Math.PI) / items.length;
+            items.forEach((item, index) => {
+                const angle = itemAngleStep * index;
+                const x = radius * Math.cos(angle);
+                const z = radius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, item.title);
+                container.appendChild(node);
+                nodeMap.set(item.id, {x, y, z});
+            });
 
-    // Set the circle slightly in front of the camera
-    const circleZ = cameraZ - 20; // Change the distance as needed
+            // Create tag nodes in inner circle
+            const tagRadius = radius * 0.5;
+            const tagAngleStep = (2 * Math.PI) / tags.length;
+            tags.forEach((tag, index) => {
+                const angle = tagAngleStep * index;
+                const x = tagRadius * Math.cos(angle);
+                const z = tagRadius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, tag, true);
+                container.appendChild(node);
+                nodeMap.set(tag, {x, y, z});
+            });
 
-    // Create item nodes in outer circle (vertical layout)
-    const itemAngleStep = (2 * Math.PI) / items.length;
-    items.forEach((item, index) => {
-        const angle = itemAngleStep * index;
-        const x = cameraX + radius * Math.sin(angle);  // Use sine for vertical position
-        const y = cameraY + radius * Math.cos(angle);  // Use cosine for vertical position
-        const z = circleZ; // Keep the Z position constant
-
-        const node = createNode(x, y, z, item.title);
-        container.appendChild(node);
-        nodeMap.set(item.id, {x, y, z});
-    });
-
-    // Create tag nodes in inner circle (vertical layout)
-    const tagRadius = radius * 0.5;
-    const tagAngleStep = (2 * Math.PI) / tags.length;
-    tags.forEach((tag, index) => {
-        const angle = tagAngleStep * index;
-        const x = cameraX + tagRadius * Math.sin(angle);  // Use sine for vertical position
-        const y = cameraY + tagRadius * Math.cos(angle);  // Use cosine for vertical position
-        const z = circleZ; // Keep the Z position constant
-
-        const node = createNode(x, y, z, tag, true);
-        container.appendChild(node);
-        nodeMap.set(tag, {x, y, z});
-    });
-
-    // Create connections
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.id);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    ${itemPos.x} ${itemPos.y} ${itemPos.z},
-                    ${tagPos.x} ${tagPos.y} ${tagPos.z}
-                );
-                container.appendChild(line);
-            }
-        });
-    });
-}
-
+            // Create connections
+            items.forEach(item => {
+                const itemPos = nodeMap.get(item.id);
+                item.tags.forEach(tag => {
+                    const tagPos = nodeMap.get(tag);
+                    if (itemPos && tagPos) {
+                        const line = createLine(
+                            `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                            `${tagPos.x} ${tagPos.y} ${tagPos.z}`
+                        );
+                        container.appendChild(line);
+                    }
+                });
+            });
+        }
 
         // Initialize layout after scene loads
         document.querySelector('a-scene').addEventListener('loaded', function () {
@@ -280,69 +245,26 @@
             createCircularLayout();
         });
 
-    function togglePhysics() {
-    physicsEnabled = !physicsEnabled;
-    const container = document.querySelector('#nodes');
-    
-    // Clear existing connections (lines) each time physics is toggled
-    const existingLines = container.querySelectorAll('a-entity[line]');
-    existingLines.forEach(line => line.parentElement.removeChild(line));
-    
-    if (physicsEnabled) {
-        // Apply random forces to nodes
-        const nodes = document.querySelectorAll('#nodes a-entity');
-        nodes.forEach(node => {
-            const randomX = (Math.random() - 0.5) * 30;
-            const randomY = (Math.random() - 0.5) * 30;
-            const randomZ = (Math.random() - 0.5) * 30;
-            node.setAttribute('animation', {
-                property: 'position',
-                to: ${randomX} ${randomY} ${randomZ},
-                dur: 3000,
-                easing: 'easeInOutQuad',
-                loop: false // Prevent it from repeating forever
-            });
-        });
-
-        // After the animation is complete, update lines
-        setTimeout(() => {
-            updateLines();
-        }, 3000); // Wait for the duration of the animation before updating lines
-    } else {
-        // Reset layout when physics is turned off
-        createCircularLayout();
-    }
-}
-
-// Function to update lines after physics animation
-function updateLines() {
-    const container = document.querySelector('#nodes');
-    const nodeMap = new Map();
-    
-    // Recreate the node map with current positions
-    const nodes = container.querySelectorAll('a-entity');
-    nodes.forEach(node => {
-        const position = node.getAttribute('position');
-        nodeMap.set(node.getAttribute('title'), position);
-    });
-
-    // Create new lines between items and their tags
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.title);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    ${itemPos.x} ${itemPos.y} ${itemPos.z},
-                    ${tagPos.x} ${tagPos.y} ${tagPos.z}
-                );
-                container.appendChild(line);
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            if (physicsEnabled) {
+                // Apply random forces to nodes
+                const nodes = document.querySelectorAll('#nodes a-entity');
+                nodes.forEach(node => {
+                    const randomX = (Math.random() - 0.5) * 30;
+                    const randomY = (Math.random() - 0.5) * 30;
+                    const randomZ = (Math.random() - 0.5) * 30;
+                    node.setAttribute('animation', {
+                        property: 'position',
+                        to: `${randomX} ${randomY} ${randomZ}`,
+                        dur: 3000,
+                        easing: 'easeInOutQuad'
+                    });
+                });
+            } else {
+                createCircularLayout();
             }
-        });
-    });
-}
-
-
+        }
     </script>
 </body>
 </html>
