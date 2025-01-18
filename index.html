@@ -160,7 +160,7 @@
 
     function createNode(x, y, z, title, isTag = false) {
         const nodeEntity = document.createElement('a-entity');
-        nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+        nodeEntity.setAttribute('position', ${x} ${y} ${z});
 
         // Create sphere for node
         const sphere = document.createElement('a-sphere');
@@ -192,61 +192,57 @@
         return line;
     }
 
-   function createVerticalCircleLayout() {
-    const container = document.querySelector('#nodes');
-    container.innerHTML = ''; // Clear existing nodes
+    function createCircularLayout() {
+        const container = document.querySelector('#nodes');
+        container.innerHTML = ''; // Clear existing nodes
 
-    const nodeMap = new Map();
-    const radius = 10; // Radius of the circle
-    const angleStep = (Math.PI * 2) / items.length; // Angle between each item node
+        const nodeMap = new Map();
+        const radius = 15; // Increased radius for more space
 
-    // Define the angle offset to tilt the circle upright
-    const angleOffset = Math.PI / 2;  // Rotating 90 degrees to make it upright
+        // Create item nodes in outer circle
+        const itemAngleStep = (2 * Math.PI) / items.length;
+        items.forEach((item, index) => {
+            const angle = itemAngleStep * index;
+            const x = radius * Math.cos(angle);
+            const z = radius * Math.sin(angle);
+            const y = 0;
 
-    // Create item nodes in a circular layout
-    items.forEach((item, index) => {
-        const angle = angleStep * index + angleOffset; // Add the angle offset for vertical rotation
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-        const z = 0;
-
-        const node = createNode(x, y, z, item.title);
-        container.appendChild(node);
-        nodeMap.set(item.id, { x, y, z });
-    });
-
-    // Create tag nodes in a circular layout (behind items)
-    tags.forEach((tag, index) => {
-        const angle = angleStep * index + angleOffset;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-        const z = 5; // Tags are slightly behind the items
-
-        const node = createNode(x, y, z, tag, true);
-        container.appendChild(node);
-        nodeMap.set(tag, { x, y, z });
-    });
-
-    // Create connections (edges)
-    const edges = [];
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.id);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                );
-                edges.push(line);
-                container.appendChild(line);
-            }
+            const node = createNode(x, y, z, item.title);
+            container.appendChild(node);
+            nodeMap.set(item.id, {x, y, z});
         });
-    });
 
-    // Store edges in a global variable to keep them intact when physics is toggled
-    window.edges = edges;
-}
+        // Create tag nodes in inner circle
+        const tagRadius = radius * 0.5;
+        const tagAngleStep = (2 * Math.PI) / tags.length;
+        tags.forEach((tag, index) => {
+            const angle = tagAngleStep * index;
+            const x = tagRadius * Math.cos(angle);
+            const z = tagRadius * Math.sin(angle);
+            const y = 0;
+
+            const node = createNode(x, y, z, tag, true);
+            container.appendChild(node);
+            nodeMap.set(tag, {x, y, z});
+        });
+
+        // Create connections (edges)
+        const edges = [];
+        items.forEach(item => {
+            const itemPos = nodeMap.get(item.id);
+            item.tags.forEach(tag => {
+                const tagPos = nodeMap.get(tag);
+                if (itemPos && tagPos) {
+                    const line = createLine(
+                        ${itemPos.x} ${itemPos.y} ${itemPos.z},
+                        ${tagPos.x} ${tagPos.y} ${tagPos.z}
+                    );
+                    edges.push(line);
+                    container.appendChild(line);
+                }
+            });
+        });
+
         // Store edges in a global variable to keep them intact when physics is toggled
         window.edges = edges;
     }
@@ -269,23 +265,14 @@
                 const randomZ = (Math.random() - 0.5) * 30;
                 node.setAttribute('animation', {
                     property: 'position',
-                    to: `${randomX} ${randomY} ${randomZ}`,
+                    to: ${randomX} ${randomY} ${randomZ},
                     dur: 3000,
                     easing: 'easeInOutQuad'
                 });
             });
         } else {
-            // Reset nodes to original positions (based on their initial layout)
-            const nodes = document.querySelectorAll('#nodes a-entity');
-            nodes.forEach(node => {
-                const originalPosition = node.getAttribute('position');
-                node.setAttribute('animation', {
-                    property: 'position',
-                    to: originalPosition,
-                    dur: 2000,
-                    easing: 'easeInOutQuad'
-                });
-            });
+            // Reset node positions to original layout
+            createCircularLayout(); // This will maintain the edges
         }
     }
 </script>
