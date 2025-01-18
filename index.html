@@ -245,26 +245,54 @@
             createCircularLayout();
         });
 
-        function togglePhysics() {
-            physicsEnabled = !physicsEnabled;
-            if (physicsEnabled) {
-                // Apply random forces to nodes
-                const nodes = document.querySelectorAll('#nodes a-entity');
-                nodes.forEach(node => {
-                    const randomX = (Math.random() - 0.5) * 30;
-                    const randomY = (Math.random() - 0.5) * 30;
-                    const randomZ = (Math.random() - 0.5) * 30;
-                    node.setAttribute('animation', {
-                        property: 'position',
-                        to: `${randomX} ${randomY} ${randomZ}`,
-                        dur: 3000,
-                        easing: 'easeInOutQuad'
-                    });
-                });
-            } else {
-                createCircularLayout();
+       let nodePositions = new Map();
+
+function togglePhysics() {
+    physicsEnabled = !physicsEnabled;
+    const container = document.querySelector('#nodes');
+
+    // Remove all existing lines (to be recreated)
+    const existingLines = container.querySelectorAll('a-entity[line]');
+    existingLines.forEach(line => line.remove());
+
+    if (physicsEnabled) {
+        // Apply random forces to nodes and store new positions
+        const nodes = document.querySelectorAll('#nodes a-entity');
+        nodes.forEach(node => {
+            const randomX = (Math.random() - 0.5) * 30;
+            const randomY = (Math.random() - 0.5) * 30;
+            const randomZ = (Math.random() - 0.5) * 30;
+
+            node.setAttribute('animation', {
+                property: 'position',
+                to: `${randomX} ${randomY} ${randomZ}`,
+                dur: 3000,
+                easing: 'easeInOutQuad'
+            });
+
+            // Save the new positions of nodes
+            nodePositions.set(node, { x: randomX, y: randomY, z: randomZ });
+        });
+    } else {
+        // Restore original circular layout
+        createCircularLayout();
+    }
+
+    // Recreate lines after node movements
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            const itemPos = nodePositions.get(document.querySelector(`[title="${item.title}"]`)) || nodeMap.get(item.id);
+            const tagPos = nodePositions.get(document.querySelector(`[title="${tag}"]`)) || nodeMap.get(tag);
+            if (itemPos && tagPos) {
+                const line = createLine(
+                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
+                );
+                container.appendChild(line);
             }
-        }
+        });
+    });
+}
     </script>
 </body>
 </html>
