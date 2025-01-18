@@ -356,28 +356,41 @@
 
         
 
-             function updateNodesFromSimulation() {
-            simulation.nodes().forEach(node => {
-                const nodeEntity = nodeElements.get(node.id);
-                if (nodeEntity) {
-                    nodeEntity.setAttribute('position', ${node.x} ${node.y} ${node.z});
-                }
-            });
-            updateLines();
+            // Function to update node positions during the simulation
+function updateNodesFromSimulation() {
+    // Loop through all nodes and update their position in the 3D world
+    simulation.nodes().forEach(node => {
+        const nodeEntity = nodeElements.get(node.id);
+        if (nodeEntity) {
+            // Set the position attribute for the node entity
+            nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
         }
+    });
 
-        function togglePhysics() {
-            physicsEnabled = !physicsEnabled;
-            if (physicsEnabled) {
-                simulation = createForceSimulation();
-                simulation.on('tick', updateNodesFromSimulation);
-            } else {
-                if (simulation) {
-                    simulation.stop();
-                }
-                createCircularLayout();
-            }
+    // Update lines (connections) between nodes
+    updateLines();
+}
+
+// Toggle physics simulation on/off
+function togglePhysics() {
+    physicsEnabled = !physicsEnabled;
+
+    if (physicsEnabled) {
+        // Restart the force simulation when turning physics on
+        simulation = createForceSimulation();
+        
+        // Bind the tick event to update node positions on every simulation step
+        simulation.on('tick', updateNodesFromSimulation);
+    } else {
+        if (simulation) {
+            // Stop the simulation when turning physics off
+            simulation.stop();
         }
+        
+        // Switch to a fixed circular layout if physics is disabled
+        createCircularLayout();
+    }
+}
 
        
         // Initialize layout after scene loads
