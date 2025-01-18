@@ -190,55 +190,55 @@
             return line;
         }
 
-        function createCircularLayout() {
-            const container = document.querySelector('#nodes');
-            container.innerHTML = ''; // Clear existing nodes
-            
-            const nodeMap = new Map();
-            const radius = 15; // Increased radius for more space
-            
-            // Create item nodes in outer circle
-            const itemAngleStep = (2 * Math.PI) / items.length;
-            items.forEach((item, index) => {
-                const angle = itemAngleStep * index;
-                const x = radius * Math.cos(angle);
-                const z = radius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, item.title);
-                container.appendChild(node);
-                nodeMap.set(item.id, {x, y, z});
-            });
+    function createCircularLayout() {
+    const container = document.querySelector('#nodes');
+    container.innerHTML = ''; // Clear existing nodes
+    
+    const nodeMap = new Map();
+    const radius = 15; // Increased radius for more space
+    
+    // Create item nodes in vertical circle
+    const itemAngleStep = (2 * Math.PI) / items.length;
+    items.forEach((item, index) => {
+        const angle = itemAngleStep * index;
+        const x = 0; // Fixed at the center horizontally
+        const y = radius * Math.cos(angle); // Vertical radius for Y-axis
+        const z = radius * Math.sin(angle); // Horizontal radius for Z-axis
+        
+        const node = createNode(x, y, z, item.title);
+        container.appendChild(node);
+        nodeMap.set(item.id, {x, y, z});
+    });
 
-            // Create tag nodes in inner circle
-            const tagRadius = radius * 0.5;
-            const tagAngleStep = (2 * Math.PI) / tags.length;
-            tags.forEach((tag, index) => {
-                const angle = tagAngleStep * index;
-                const x = tagRadius * Math.cos(angle);
-                const z = tagRadius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, tag, true);
-                container.appendChild(node);
-                nodeMap.set(tag, {x, y, z});
-            });
+    // Create tag nodes in vertical circle
+    const tagRadius = radius * 0.5;
+    const tagAngleStep = (2 * Math.PI) / tags.length;
+    tags.forEach((tag, index) => {
+        const angle = tagAngleStep * index;
+        const x = 0; // Fixed at the center horizontally
+        const y = tagRadius * Math.cos(angle); // Vertical radius for Y-axis
+        const z = tagRadius * Math.sin(angle); // Horizontal radius for Z-axis
+        
+        const node = createNode(x, y, z, tag, true);
+        container.appendChild(node);
+        nodeMap.set(tag, {x, y, z});
+    });
 
-            // Create connections
-            items.forEach(item => {
-                const itemPos = nodeMap.get(item.id);
-                item.tags.forEach(tag => {
-                    const tagPos = nodeMap.get(tag);
-                    if (itemPos && tagPos) {
-                        const line = createLine(
-                            `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                            `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                        );
-                        container.appendChild(line);
-                    }
-                });
-            });
-        }
+    // Create connections
+    items.forEach(item => {
+        const itemPos = nodeMap.get(item.id);
+        item.tags.forEach(tag => {
+            const tagPos = nodeMap.get(tag);
+            if (itemPos && tagPos) {
+                const line = createLine(
+                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
+                );
+                container.appendChild(line);
+            }
+        });
+    });
+}
 
         // Initialize layout after scene loads
         document.querySelector('a-scene').addEventListener('loaded', function () {
