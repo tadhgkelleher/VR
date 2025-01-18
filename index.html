@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web VR Graph with Circular Layout</title>
+  <title>Interactive Graph with Circular Layout</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://unpkg.com/3d-force-graph-aframe"></script>
   <style>
@@ -43,33 +43,123 @@
   </a-scene>
 
   <script>
-    const radius = 5; // Radius for circular layout
+    const radius = 10; // Radius for circular layout
+
+    // Dataset
+    const data = [
+      
+  { "id": 1, "title": "Summerhill Dawn", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/NgAvUmezuC8" },
+  { "id": 2, "title": "Trouble", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/LqgQawC0qCc" },
+  { "id": 3, "title": "Beautiful Goodbye", "tags": ["Cilla Black", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/I1WocWuNLVg" },
+  { "id": 4, "title": "Single", "tags": ["Natasha Bedingfield", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/3kXZc_isrBA" },
+  { "id": 5, "title": "It's Nice to Be Nice", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/ap7Bklv8pB0" },
+  { "id": 6, "title": "Shaman (Meditation)", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/lz2hy0v5nBU" },
+  { "id": 7, "title": "RTE's Late Late Show - Natasha Bedingfield - Single", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/3kXZc_isrBA" },
+  { "id": 8, "title": "Smile", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/UNhLjsRurVc" },
+  { "id": 9, "title": "There Are More Things", "tags": ["LiR", "video"], "videoUrl": "https://www.youtube.com/embed/7D51TGvo1jg" },
+  { "id": 10, "title": "Muff Winwood took a trip and missed Woodstock", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/hfHnSofFpEI" },
+  { "id": 11, "title": "Traveller", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/4Fl4AVab8MI" },
+  { "id": 12, "title": "Traveller - Fan clip (2020)", "tags": ["LiR", "video"], "videoUrl": "https://www.youtube.com/embed/kpV02nfOqKU" },
+  { "id": 13, "title": "Reverb: The Golden Horde profile on RTÉ", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/_PmMbWVzYK8" },
+  { "id": 14, "title": "Prayer Before A Voyage (The Late Late Show)", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/BnDU3f4HxC8" },
+  { "id": 15, "title": "Great Motivator", "tags": ["Igloo", "video"], "videoUrl": "https://www.youtube.com/embed/z5hDWKEqz_I" },
+  { "id": 16, "title": "Falling At Your Feet (The Late Late Show) (2003)", "tags": ["U2", "video"], "videoUrl": "https://www.youtube.com/embed/m6auWD_U2bM" },
+  { "id": 17, "title": "All Your Life", "tags": ["Bickley / O'Farrell", "video"], "videoUrl": "https://www.youtube.com/embed/t2KyyySk9Wg" },
+  { "id": 18, "title": "Friends in Time", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/Emf_gmtMVZk" },
+  { "id": 19, "title": "100 Boys", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/xmTPb18DubE" },
+  { "id": 20, "title": "Endless Weekend", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/fKh0SA7iHCk" },
+  { "id": 21, "title": "ETI (w/ live footage)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/c6KKVxqKzTU" },
+  { "id": 22, "title": "Black Blade (live)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/Z-IlxQ6_Yj8" },
+  { "id": 23, "title": "Down Down Down (live)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/2bZexBarD1o" },
+  { "id": 24, "title": "Friends in Time", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/ZzCWjXomrhc" },
+  { "id": 25, "title": "Book of Everlasting Things (unreleased demo)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/0_Fuiv9HohU" },
+  { "id": 26, "title": "Rorschach (demo version)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/CjKrJ0oqDpQ" },
+  { "id": 27, "title": "Solar System (live, bootleg)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/h3x_5VZ78jo" },
+  { "id": 28, "title": "Louie, Louie/Hang On Sloopy: Johnny Thunders with The Golden Horde", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/mmZBy-R8g48" },
+  { "id": 29, "title": "Something Beautiful (unreleased, demo)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/H0NVypxGVjw" },
+  { "id": 30, "title": "Blitzkrieg Bop - Joey Ramone & the Resistance (live)", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/6T11-Oip3Gw" },
+  { "id": 31, "title": "Hopes of a Dream (unreleased, demo)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/x2_rsoGuUZQ" },
+  { "id": 32, "title": "Cigarettes & Sunshine (unreleased, demo)", "tags": ["The Golden Horde", "video"], "videoUrl": "https://www.youtube.com/embed/EpwmsQnryL8" },
+  { "id": 33, "title": "Niemali", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/7IRvFxznRw4" },
+  { "id": 34, "title": "Killer Species", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/NOiYOwFcYUs" },
+  { "id": 35, "title": "Shunk", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/uUJf1wXkEEQ" },
+  { "id": 36, "title": "Spinning World", "tags": ["AVAN ATTAK", "video"], "videoUrl": "https://www.youtube.com/embed/thJC6FGYCzQ" },
+  { "id": 37, "title": "Die Nebula", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/vylMvInak2k" },
+  { "id": 38, "title": "Track With No Name", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/Qv1usZdAgKI" },
+  { "id": 39, "title": "Kaos Split", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/Lv76RvHm_hk" },
+  { "id": 40, "title": "Gold (from movie Once)", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/LLNhmjtOcC0" },
+  { "id": 41, "title": "I Was Looking For Someone", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/_kn_N6Nxnh8" },
+  { "id": 42, "title": "Love Song", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/qhqbc_YumSM" },
+  { "id": 43, "title": "LIVE IN WHELANS 1990 [Full Gig]", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/Om0cT-5015U" },
+  { "id": 44, "title": "#OnceCastEP: 'Gold' (London Cast of Once)", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/71eLTe3tmow" },
+  { "id": 45, "title": "Gold; Cork Opera House, Cork 02.02.17", "tags": ["Interference", "video"], "videoUrl": "https://www.youtube.com/embed/eAuf_e3b-HY" },
+  { "id": 46, "title": "Wild Cat Strutting Thing - Mundy (Interference)", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/v3nv1xboimg" },
+  { "id": 47, "title": "Wild Cat Strutting Thing (feat. Fergus O'Farrell & James O'Leary)", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/pDlpRG2JSgI" },
+  { "id": 48, "title": "Vinegar Girl (feat. Fergus O'Farrell & James O'Leary)", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/LRF_aaiRQsA" },
+  { "id": 49, "title": "No Reason (Official Music Video)", "tags": ["The Glee Club", "video"], "videoUrl": "https://www.youtube.com/embed/76sg_MzvIsw" },
+  { "id": 50, "title": "The Blame", "tags": ["The Glee Club", "video"], "videoUrl": "https://www.youtube.com/embed/kXGTHDK8kpw" },
+  { "id": 51, "title": "Main Work", "tags": ["RTE's Late Late Show", "Sony Music", "Warner Bros", "4AD", "Satanta Records", "Performing", "Recording", "Touring"] },
+  { "id": 52, "title": "Rod Stewart", "tags": ["Drums", "TV"] },
+  { "id": 53, "title": "Paul Young", "tags": ["Drums", "TV"] },
+  { "id": 54, "title": "Kirsty MacColl", "tags": ["Artist"] },
+  { "id": 55, "title": "Katie Melua", "tags": ["Artist", "TV"] },
+  { "id": 56, "title": "The 4 Of Us", "tags": ["Drums", "Live", "Recording", "TV"] },
+  { "id": 57, "title": "Gavin Friday", "tags": ["Artist"] },
+  { "id": 58, "title": "Interference", "tags": ["Drums"] },
+  { "id": 59, "title": "Grand Slam", "tags": ["Drums"] },
+  { "id": 60, "title": "Mik Pyro", "tags": ["Artist"] },
+  { "id": 61, "title": "The Dublin Blues Cartel", "tags": ["Drums"] },
+  { "id": 62, "title": "The Golden Horde", "tags": ["Drums"] },
+  { "id": 63, "title": "The Forget-Me-Nots", "tags": ["Drums", "TV", "Live"] },
+  { "id": 64, "title": "Lir", "tags": ["Drums", "Live", "Recording", "TV", "BBC"] },
+  { "id": 65, "title": "Mitch Easter", "tags": ["Producer", "REM", "Suzanne Vega", "Wilco"] },
+  { "id": 66, "title": "Bungalow", "tags": ["Drums"] },
+  { "id": 67, "title": "The Glee Club", "tags": ["Drums"] },
+  { "id": 68, "title": "Mundy", "tags": ["Artist"] },
+  { "id": 69, "title": "Glen Hansard", "tags": ["Artist"] },
+  { "id": 70, "title": "Eamonn Dowd", "tags": ["Artist"] },
+  { "id": 71, "title": "The Racketeers", "tags": ["Drums"] },
+  { "id": 72, "title": "Darling Sugar Honey", "tags": ["Drums"] },
+  { "id": 73, "title": "Hank Half Head", "tags": ["Drums", "Live", "Recording"] },
+  { "id": 74, "title": "Alice Springs", "tags": ["Drums"] },
+  { "id": 75, "title": "Tryst", "tags": ["Artist"] },
+  { "id": 76, "title": "Donal Byrne", "tags": ["Artist"] },
+  { "id": 77, "title": "John Murphy", "tags": ["Artist"] },
+  { "id": 78, "title": "Hugh Doolin", "tags": ["Artist"] },
+  { "id": 79, "title": "Sean O'Connor", "tags": ["Artist"] },
+  { "id": 80, "title": "Pat Farrell", "tags": ["Artist"] },
+  { "id": 81, "title": "John Quearney", "tags": ["Artist"] },
+  { "id": 82, "title": "Thomas Walsh", "tags": ["Artist", "Ivo Novello Winner"] },
+  { "id": 83, "title": "Robbie Malone", "tags": ["Artist", "David Gray"] },
+  { "id": 84, "title": "Pete Wingfield", "tags": ["Producer", "Paul McCartney", "Everly Bros", "Van Morrison"] },
+  { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] },
+    ];
+
+    // Generate nodes and links
+    const nodes = data.map((item, index) => {
+      const angle = (index / data.length) * 2 * Math.PI;
+      return {
+        id: item.id,
+        title: item.title,
+        tags: item.tags,
+        videoUrl: item.videoUrl || null,
+        x: radius * Math.cos(angle),
+        y: 0,
+        z: radius * Math.sin(angle)
+      };
+    });
+
+    const links = [];
+    data.forEach((item1, index1) => {
+      data.forEach((item2, index2) => {
+        if (index1 < index2 && item1.tags.some(tag => item2.tags.includes(tag))) {
+          links.push({ source: item1.id, target: item2.id });
+        }
+      });
+    });
 
     // Graph data
-    const graphData = {
-      nodes: [
-        { id: "1", name: "Node 1", color: "red" },
-        { id: "2", name: "Node 2", color: "blue" },
-        { id: "3", name: "Node 3", color: "green" },
-        { id: "4", name: "Node 4", color: "yellow" },
-        { id: "5", name: "Node 5", color: "purple" }
-      ].map((node, index, arr) => {
-        const angle = (index / arr.length) * 2 * Math.PI;
-        return {
-          ...node,
-          x: radius * Math.cos(angle),
-          y: 0,
-          z: radius * Math.sin(angle)
-        };
-      }),
-      links: [
-        { source: "1", target: "2" },
-        { source: "2", target: "3" },
-        { source: "3", target: "4" },
-        { source: "4", target: "5" },
-        { source: "5", target: "1" }
-      ]
-    };
+    const graphData = { nodes, links };
 
     // Initialize the graph
     const graphEl = document.querySelector("#graph");
