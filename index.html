@@ -328,33 +328,6 @@ You said:
     }
 }
 
-// Function to update lines after physics animation
-function updateLines() {
-    const container = document.querySelector('#nodes');
-    const nodeMap = new Map();
-    
-    // Recreate the node map with current positions
-    const nodes = container.querySelectorAll('a-entity');
-    nodes.forEach(node => {
-        const position = node.getAttribute('position');
-        nodeMap.set(node.getAttribute('title'), position);
-    });
-
-    // Create new lines between items and their tags
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.title);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    ${itemPos.x} ${itemPos.y} ${itemPos.z},
-                    ${tagPos.x} ${tagPos.y} ${tagPos.z}
-                );
-                container.appendChild(line);
-            }
-        });
-    });
-}
 
 
     </script>
