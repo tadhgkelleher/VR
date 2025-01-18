@@ -149,14 +149,14 @@
 
 
 
-    // Collect all unique tags
-    const uniqueTags = new Set();
+     const uniqueTags = new Set();
     items.forEach(item => {
         item.tags.forEach(tag => uniqueTags.add(tag));
     });
     const tags = Array.from(uniqueTags);
 
     let physicsEnabled = false;
+    let nodePositions = new Map();  // To track node positions
 
     function createNode(x, y, z, title, isTag = false) {
         const nodeEntity = document.createElement('a-entity');
@@ -210,6 +210,7 @@
             const node = createNode(x, y, z, item.title);
             container.appendChild(node);
             nodeMap.set(item.id, {x, y, z});
+            nodePositions.set(item.id, {x, y, z});  // Store the initial positions
         });
 
         // Create tag nodes in inner circle
@@ -224,6 +225,7 @@
             const node = createNode(x, y, z, tag, true);
             container.appendChild(node);
             nodeMap.set(tag, {x, y, z});
+            nodePositions.set(tag, {x, y, z});  // Store the initial positions
         });
 
         // Create connections (edges)
@@ -243,8 +245,28 @@
             });
         });
 
-        // Store edges in a global variable to keep them intact when physics is toggled
+        // Store edges globally to update them later
         window.edges = edges;
+        window.nodeMap = nodeMap;  // Store node map for later reference
+    }
+
+    // Update edge positions when physics is toggled
+    function updateEdges() {
+        const container = document.querySelector('#nodes');
+        window.edges.forEach((line, index) => {
+            const itemId = items[Math.floor(index / tags.length)].id;
+            const tagId = tags[index % tags.length];
+
+            const itemPos = nodePositions.get(itemId);
+            const tagPos = nodePositions.get(tagId);
+
+            if (itemPos && tagPos) {
+                line.setAttribute('line', {
+                    start: `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                    end: `${tagPos.x} ${tagPos.y} ${tagPos.z}`,
+                });
+            }
+        });
     }
 
     // Initialize layout after scene loads
@@ -269,6 +291,13 @@
                     dur: 3000,
                     easing: 'easeInOutQuad'
                 });
+
+                // Update node positions in the map
+                node.addEventListener('animationcomplete', function () {
+                    const position = node.getAttribute('position');
+                    nodePositions.set(node.id, position);
+                    updateEdges();  // Update the edges after the nodes move
+                });
             });
         } else {
             // Reset node positions to original layout
@@ -276,6 +305,5 @@
         }
     }
 </script>
-
 </body>
 </html>
