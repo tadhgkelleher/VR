@@ -190,7 +190,7 @@
             return line;
         }
 
-      function createCircularLayout() {
+     function createCircularLayout() {
     const container = document.querySelector('#nodes');
     container.innerHTML = ''; // Clear existing nodes
     
@@ -207,27 +207,27 @@
     // Set the circle slightly in front of the camera
     const circleZ = cameraZ - 20; // Change the distance as needed
 
-    // Create item nodes in outer circle
+    // Create item nodes in outer circle (vertical layout)
     const itemAngleStep = (2 * Math.PI) / items.length;
     items.forEach((item, index) => {
         const angle = itemAngleStep * index;
-        const x = cameraX + radius * Math.cos(angle);
-        const z = circleZ + radius * Math.sin(angle);
-        const y = cameraY; // Keep y at camera level
+        const x = cameraX + radius * Math.sin(angle);  // Use sine for vertical position
+        const y = cameraY + radius * Math.cos(angle);  // Use cosine for vertical position
+        const z = circleZ; // Keep the Z position constant
 
         const node = createNode(x, y, z, item.title);
         container.appendChild(node);
         nodeMap.set(item.id, {x, y, z});
     });
 
-    // Create tag nodes in inner circle
+    // Create tag nodes in inner circle (vertical layout)
     const tagRadius = radius * 0.5;
     const tagAngleStep = (2 * Math.PI) / tags.length;
     tags.forEach((tag, index) => {
         const angle = tagAngleStep * index;
-        const x = cameraX + tagRadius * Math.cos(angle);
-        const z = circleZ + tagRadius * Math.sin(angle);
-        const y = cameraY; // Keep y at camera level
+        const x = cameraX + tagRadius * Math.sin(angle);  // Use sine for vertical position
+        const y = cameraY + tagRadius * Math.cos(angle);  // Use cosine for vertical position
+        const z = circleZ; // Keep the Z position constant
 
         const node = createNode(x, y, z, tag, true);
         container.appendChild(node);
@@ -249,6 +249,7 @@
         });
     });
 }
+
 
         // Initialize layout after scene loads
         document.querySelector('a-scene').addEventListener('loaded', function () {
