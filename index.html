@@ -257,27 +257,25 @@
             createCircularLayout();
         });
 
-      function togglePhysics() {
+     function togglePhysics() {
     physicsEnabled = !physicsEnabled;
     const container = document.querySelector('#nodes');
     
     // Clear existing connections (lines) each time physics is toggled
     const existingLines = container.querySelectorAll('a-entity[line]');
     existingLines.forEach(line => line.parentElement.removeChild(line));
-    
+
     if (physicsEnabled) {
-        // Apply random forces to nodes
+        // Apply fixed physics movement to nodes (e.g., move nodes up along the Y-axis)
         const nodes = document.querySelectorAll('#nodes a-entity');
         nodes.forEach(node => {
-            const randomX = (Math.random() - 0.5) * 30;
-            const randomY = (Math.random() - 0.5) * 30;
-            const randomZ = (Math.random() - 0.5) * 30;
+            const position = node.getAttribute('position');
+            const newY = position.y + 5;  // Move nodes upwards by 5 units
             node.setAttribute('animation', {
                 property: 'position',
-                to: `${randomX} ${randomY} ${randomZ}`,
+                to: `${position.x} ${newY} ${position.z}`,
                 dur: 3000,
-                easing: 'easeInOutQuad',
-                loop: false // Prevent it from repeating forever
+                easing: 'easeInOutQuad'
             });
         });
 
@@ -318,6 +316,7 @@ function updateLines() {
         });
     });
 }
+
     </script>
 </body>
 </html>
