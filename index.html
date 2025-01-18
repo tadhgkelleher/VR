@@ -4,6 +4,29 @@
     <title>VR Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <script>
+    // Set up zoom functionality
+    const camera = document.querySelector('[camera]'); // Assuming your camera is defined with a camera component
+
+    let zoomLevel = 10; // Default zoom level (distance from origin)
+    const zoomSpeed = 2; // Speed at which zoom happens
+    const minZoom = 5; // Minimum zoom distance
+    const maxZoom = 30; // Maximum zoom distance
+
+    // Event listener for mouse wheel to zoom in/out
+    window.addEventListener('wheel', function (event) {
+        if (event.deltaY < 0) {
+            // Scroll up (zoom in)
+            zoomLevel = Math.max(minZoom, zoomLevel - zoomSpeed); // Prevent zooming too close
+        } else if (event.deltaY > 0) {
+            // Scroll down (zoom out)
+            zoomLevel = Math.min(maxZoom, zoomLevel + zoomSpeed); // Prevent zooming too far
+        }
+
+        // Apply the new zoom level to the camera position (on the Z-axis)
+        camera.setAttribute('position', `0 1 ${zoomLevel}`);
+    });
+</script>
     <style>
         .controls {
             position: fixed;
