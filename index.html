@@ -60,7 +60,8 @@
     <script>
         // Full dataset from original
         const items = [
-             { "id": 2, "title": "Trouble", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/LqgQawC0qCc" },
+            { "id": 1, "title": "Summerhill Dawn", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/NgAvUmezuC8" },
+  { "id": 2, "title": "Trouble", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/LqgQawC0qCc" },
   { "id": 3, "title": "Beautiful Goodbye", "tags": ["Cilla Black", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/I1WocWuNLVg" },
   { "id": 4, "title": "Single", "tags": ["Natasha Bedingfield", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/3kXZc_isrBA" },
   { "id": 5, "title": "It's Nice to Be Nice", "tags": ["video"], "videoUrl": "https://www.youtube.com/embed/ap7Bklv8pB0" },
@@ -146,7 +147,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-    // Collect all unique tags
+        // Collect all unique tags
         const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
@@ -157,7 +158,7 @@
 
         function createNode(x, y, z, title, isTag = false) {
             const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', ${x} ${y} ${z});
+            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
 
             // Create sphere for node
             const sphere = document.createElement('a-sphere');
@@ -230,8 +231,8 @@
                     const tagPos = nodeMap.get(tag);
                     if (itemPos && tagPos) {
                         const line = createLine(
-                            ${itemPos.x} ${itemPos.y} ${itemPos.z},
-                            ${tagPos.x} ${tagPos.y} ${tagPos.z}
+                            `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                            `${tagPos.x} ${tagPos.y} ${tagPos.z}`
                         );
                         container.appendChild(line);
                     }
@@ -256,7 +257,7 @@
                     const randomZ = (Math.random() - 0.5) * 30;
                     node.setAttribute('animation', {
                         property: 'position',
-                        to: ${randomX} ${randomY} ${randomZ},
+                        to: `${randomX} ${randomY} ${randomZ}`,
                         dur: 3000,
                         easing: 'easeInOutQuad'
                     });
