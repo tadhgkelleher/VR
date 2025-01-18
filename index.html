@@ -148,7 +148,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-          const uniqueTags = new Set();
+           const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -157,6 +157,55 @@
         let physicsEnabled = false;
         let connections = [];
         let nodeElements = new Map();
+        let simulation;
+
+        // Create force simulation
+        function createForceSimulation() {
+            const nodes = [];
+            const links = [];
+
+            // Add item nodes
+            items.forEach(item => {
+                nodes.push({
+                    id: item.id,
+                    title: item.title,
+                    isTag: false,
+                    x: Math.random() * 30 - 15,
+                    y: Math.random() * 30 - 15,
+                    z: Math.random() * 30 - 15
+                });
+            });
+
+            // Add tag nodes
+            tags.forEach(tag => {
+                nodes.push({
+                    id: tag,
+                    title: tag,
+                    isTag: true,
+                    x: Math.random() * 30 - 15,
+                    y: Math.random() * 30 - 15,
+                    z: Math.random() * 30 - 15
+                });
+            });
+
+            // Create links
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    links.push({
+                        source: nodes.find(n => n.id === item.id),
+                        target: nodes.find(n => n.id === tag)
+                    });
+                });
+            });
+
+            return d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).distance(5))
+                .force("charge", d3.forceManyBody().strength(-30))
+                .force("center", d3.forceCenter(0, 0, 0))
+                .force("collide", d3.forceCollide(2))
+                .velocityDecay(0.3)
+                .alphaTarget(0);
+        }
 
         function createNode(x, y, z, title, isTag = false, id) {
             const nodeEntity = document.createElement('a-entity');
@@ -177,7 +226,6 @@
             text.setAttribute('look-at', '[camera]');
             nodeEntity.appendChild(text);
 
-            // Store reference to node element
             nodeElements.set(id, nodeEntity);
             return nodeEntity;
         }
@@ -191,7 +239,6 @@
                 opacity: 0.5
             });
             
-            // Store connection info
             connections.push({
                 element: line,
                 startId: startId,
@@ -273,29 +320,25 @@
             });
         }
 
-        // Animation frame loop for updating lines
-        function animate() {
-            if (physicsEnabled) {
-                updateLines();
-            }
-            requestAnimationFrame(animate);
+        function updateNodesFromSimulation() {
+            simulation.nodes().forEach(node => {
+                const nodeEntity = nodeElements.get(node.id);
+                if (nodeEntity) {
+                    nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
+                }
+            });
+            updateLines();
         }
 
         function togglePhysics() {
             physicsEnabled = !physicsEnabled;
             if (physicsEnabled) {
-                nodeElements.forEach((node) => {
-                    const randomX = (Math.random() - 0.5) * 30;
-                    const randomY = (Math.random() - 0.5) * 30;
-                    const randomZ = (Math.random() - 0.5) * 30;
-                    node.setAttribute('animation', {
-                        property: 'position',
-                        to: `${randomX} ${randomY} ${randomZ}`,
-                        dur: 3000,
-                        easing: 'easeInOutQuad'
-                    });
-                });
+                simulation = createForceSimulation();
+                simulation.on('tick', updateNodesFromSimulation);
             } else {
+                if (simulation) {
+                    simulation.stop();
+                }
                 createCircularLayout();
             }
         }
@@ -304,7 +347,6 @@
         document.querySelector('a-scene').addEventListener('loaded', function () {
             console.log('Scene loaded, creating layout...');
             createCircularLayout();
-            animate(); // Start animation loop
         });
     </script>
 </body>
