@@ -292,65 +292,61 @@
             });
         }
 
-       function createCircularLayout() {
-    const container = document.querySelector('#nodes');
-    container.innerHTML = ''; // Clear existing nodes
-    
-    const nodeMap = new Map();
-    const radius = 15; // Increased radius for more space
-    
-    // Get the camera position to position the circle in front of the viewer
-    const camera = document.querySelector('[camera]');
-    const cameraPos = camera.getAttribute('position');
-    const cameraX = cameraPos.x;
-    const cameraY = cameraPos.y;
-    const cameraZ = cameraPos.z;
+        function createCircularLayout() {
+            const container = document.querySelector('#nodes');
+            container.innerHTML = '';
+            connections = [];
+            nodeElements.clear();
+            
+            const radius = 15;
+            
+            // Create item nodes
+            const itemAngleStep = (2 * Math.PI) / items.length;
+            items.forEach((item, index) => {
+                const angle = itemAngleStep * index;
+                const x = radius * Math.cos(angle);
+                const z = radius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, item.title, false, item.id);
+                container.appendChild(node);
+            });
 
-    // Set the circle slightly in front of the camera
-    const circleZ = cameraZ - 20; // Change the distance as needed
+            // Create tag nodes
+            const tagRadius = radius * 0.5;
+            const tagAngleStep = (2 * Math.PI) / tags.length;
+            tags.forEach((tag, index) => {
+                const angle = tagAngleStep * index;
+                const x = tagRadius * Math.cos(angle);
+                const z = tagRadius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, tag, true, tag);
+                container.appendChild(node);
+            });
 
-    // Create item nodes in outer circle (vertical layout)
-    const itemAngleStep = (2 * Math.PI) / items.length;
-    items.forEach((item, index) => {
-        const angle = itemAngleStep * index;
-        const x = cameraX + radius * Math.sin(angle);  // Use sine for vertical position
-        const y = cameraY + radius * Math.cos(angle);  // Use cosine for vertical position
-        const z = circleZ; // Keep the Z position constant
+            // Create connections
+            items.forEach(item => {
+                const itemNode = nodeElements.get(item.id);
+                item.tags.forEach(tag => {
+                    const tagNode = nodeElements.get(tag);
+                    if (itemNode && tagNode) {
+                        const startPos = itemNode.getAttribute('position');
+                        const endPos = tagNode.getAttribute('position');
+                        const line = createLine(
+                            `${startPos.x} ${startPos.y} ${startPos.z}`,
+                            `${endPos.x} ${endPos.y} ${endPos.z}`,
+                            item.id,
+                            tag
+                        );
+                        container.appendChild(line);
+                    }
+                });
+            });
+        }
 
-        const node = createNode(x, y, z, item.title);
-        container.appendChild(node);
-        nodeMap.set(item.id, {x, y, z});
-    });
+        
 
-    // Create tag nodes in inner circle (vertical layout)
-    const tagRadius = radius * 0.5;
-    const tagAngleStep = (2 * Math.PI) / tags.length;
-    tags.forEach((tag, index) => {
-        const angle = tagAngleStep * index;
-        const x = cameraX + tagRadius * Math.sin(angle);  // Use sine for vertical position
-        const y = cameraY + tagRadius * Math.cos(angle);  // Use cosine for vertical position
-        const z = circleZ; // Keep the Z position constant
-
-        const node = createNode(x, y, z, tag, true);
-        container.appendChild(node);
-        nodeMap.set(tag, {x, y, z});
-    });
-
-    // Create connections
-    items.forEach(item => {
-        const itemPos = nodeMap.get(item.id);
-        item.tags.forEach(tag => {
-            const tagPos = nodeMap.get(tag);
-            if (itemPos && tagPos) {
-                const line = createLine(
-                    `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
-                    `${tagPos.x} ${tagPos.y} ${tagPos.z}`
-                );
-                container.appendChild(line);
-            }
-        });
-    });
-}
         function updateNodesFromSimulation() {
             simulation.nodes().forEach(node => {
                 const nodeEntity = nodeElements.get(node.id);
