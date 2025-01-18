@@ -43,11 +43,11 @@
         <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
         
         <!-- Camera -->
-        <a-entity position="0 1.6 25">
-            <a-camera look-controls wasd-controls>
-                <a-cursor color="#4CC3D9"></a-cursor>
-            </a-camera>
-        </a-entity>
+      <a-entity position="0 1.6 25">
+    <a-camera id="main-camera" look-controls wasd-controls>
+        <a-cursor color="#4CC3D9"></a-cursor>
+    </a-camera>
+</a-entity>
         
         <!-- Lighting -->
         <a-light type="ambient" color="#BBB"></a-light>
@@ -56,7 +56,33 @@
         <!-- Nodes container -->
         <a-entity id="nodes"></a-entity>
     </a-scene>
+   <script>
+        // Camera zoom controls
+        const camera = document.querySelector('#main-camera');
+        const cameraEl = camera.getObject3D('camera');
 
+        // Adjust FOV for zooming
+        function adjustZoom(delta) {
+            if (cameraEl) {
+                const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta)); // Restrict FOV between 20 and 100
+                cameraEl.fov = newFOV;
+                cameraEl.updateProjectionMatrix(); // Apply changes
+            }
+        }
+
+        // Add event listeners for zooming
+        document.addEventListener('keydown', (event) => {
+            if (event.key === '+' || event.key === '=') {
+                adjustZoom(-5); // Zoom in
+            } else if (event.key === '-' || event.key === '_') {
+                adjustZoom(5); // Zoom out
+            }
+        });
+
+        document.addEventListener('wheel', (event) => {
+            adjustZoom(event.deltaY > 0 ? 5 : -5); // Zoom with the mouse wheel
+        });
+    </script>
     <script>
         // Full dataset from original
         const items = [
