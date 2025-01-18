@@ -1,3 +1,5 @@
+VR Connections Graph with Adjusted Scale
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -42,12 +44,12 @@
         <a-sky color="#1a1a1a"></a-sky>
         <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
         
-        <!-- Camera -->
-      <a-entity position="0 1.6 25">
-    <a-camera id="main-camera" look-controls wasd-controls>
-        <a-cursor color="#4CC3D9"></a-cursor>
-    </a-camera>
-</a-entity>
+        <!-- Camera - Moved closer -->
+        <a-entity position="0 1.6 8">
+            <a-camera id="main-camera" look-controls wasd-controls>
+                <a-cursor color="#4CC3D9"></a-cursor>
+            </a-camera>
+        </a-entity>
         
         <!-- Lighting -->
         <a-light type="ambient" color="#BBB"></a-light>
@@ -64,25 +66,25 @@
         // Adjust FOV for zooming
         function adjustZoom(delta) {
             if (cameraEl) {
-                const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta)); // Restrict FOV between 20 and 100
+                const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta));
                 cameraEl.fov = newFOV;
-                cameraEl.updateProjectionMatrix(); // Apply changes
+                cameraEl.updateProjectionMatrix();
             }
         }
 
-        // Add event listeners for zooming
         document.addEventListener('keydown', (event) => {
             if (event.key === '+' || event.key === '=') {
-                adjustZoom(-5); // Zoom in
+                adjustZoom(-5);
             } else if (event.key === '-' || event.key === '_') {
-                adjustZoom(5); // Zoom out
+                adjustZoom(5);
             }
         });
 
         document.addEventListener('wheel', (event) => {
-            adjustZoom(event.deltaY > 0 ? 5 : -5); // Zoom with the mouse wheel
+            adjustZoom(event.deltaY > 0 ? 5 : -5);
         });
     </script>
+ 
     <script>
         // Full dataset from original
         const items = [
@@ -173,7 +175,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-             const uniqueTags = new Set();
+          const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -184,68 +186,22 @@
         let nodeElements = new Map();
         let simulation;
 
-        // Create force simulation
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
-
-            // Add item nodes
-            items.forEach(item => {
-                nodes.push({
-                    id: item.id,
-                    title: item.title,
-                    isTag: false,
-                    x: Math.random() * 30 - 15,
-                    y: Math.random() * 30 - 15,
-                    z: Math.random() * 30 - 15
-                });
-            });
-
-            // Add tag nodes
-            tags.forEach(tag => {
-                nodes.push({
-                    id: tag,
-                    title: tag,
-                    isTag: true,
-                    x: Math.random() * 30 - 15,
-                    y: Math.random() * 30 - 15,
-                    z: Math.random() * 30 - 15
-                });
-            });
-
-            // Create links
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
-            });
-
-          return d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).distance(10))  // Increased link distance for a slower spread
-    .force("charge", d3.forceManyBody().strength(-40))  // Reduced charge strength for a slower explosion
-    .force("center", d3.forceCenter(0, 0))  // Keep center if working in 2D
-    .force("collide", d3.forceCollide(3))  // Increased collide distance for slower spread
-    .velocityDecay(0.3)  // Slightly slower decay for more gradual movement
-    .alphaTarget(0.1);  // Set a higher alphaTarget for a more gradual stop
-        }
-
         function createNode(x, y, z, title, isTag = false, id) {
             const nodeEntity = document.createElement('a-entity');
             nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
             nodeEntity.setAttribute('data-id', id);
 
             const sphere = document.createElement('a-sphere');
-            sphere.setAttribute('radius', isTag ? 0.8 : 1.3);
+            // Reduced sphere sizes for better VR viewing
+            sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
             sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
             nodeEntity.appendChild(sphere);
 
             const text = document.createElement('a-text');
             text.setAttribute('value', title);
-            text.setAttribute('position', '0 0.5 0');
-            text.setAttribute('scale', '0.7 0.7 0.7');
+            text.setAttribute('position', '0 0.8 0');
+            // Adjusted text scale for better VR readability
+            text.setAttribute('scale', '0.5 0.5 0.5');
             text.setAttribute('align', 'center');
             text.setAttribute('color', 'white');
             text.setAttribute('look-at', '[camera]');
@@ -292,108 +248,126 @@
             });
         }
 
-   function createCircularLayout() {
-    const container = document.querySelector('#nodes');
-    container.innerHTML = '';
-    connections = [];
-    nodeElements.clear();
-    
-    const radius = 15;  // Radius of the circle
-    const height = 0;   // Keep height constant (this could be adjusted to move the circle up/down)
-    
-    // Create item nodes (circle in X-Y plane)
-    const itemAngleStep = (2 * Math.PI) / items.length;
-    items.forEach((item, index) => {
-        const angle = itemAngleStep * index;
-        
-        // The x and y positions form the circle in the X-Y plane
-        const x = radius * Math.cos(angle); // Position along the x-axis (side to side)
-        const y = radius * Math.sin(angle); // Position along the y-axis (up and down)
-        
-        const z = height; // Constant depth (adjust if needed)
-        
-        // Now the nodes are in front of the viewer
-        const node = createNode(x, y, z, item.title, false, item.id);
-        container.appendChild(node);
-    });
+        function createCircularLayout() {
+            const container = document.querySelector('#nodes');
+            container.innerHTML = '';
+            connections = [];
+            nodeElements.clear();
+            
+            // Reduced radius for better VR viewing
+            const radius = 6;
+            const height = 0;
+            
+            const itemAngleStep = (2 * Math.PI) / items.length;
+            items.forEach((item, index) => {
+                const angle = itemAngleStep * index;
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                const z = height;
+                
+                const node = createNode(x, y, z, item.title, false, item.id);
+                container.appendChild(node);
+            });
 
-    // Create tag nodes (circle in X-Y plane)
-    const tagRadius = radius * 0.5; // Tags are a bit closer to the center
-    const tagAngleStep = (2 * Math.PI) / tags.length;
-    tags.forEach((tag, index) => {
-        const angle = tagAngleStep * index;
-        
-        // The x and y positions for the tags in the X-Y plane
-        const x = tagRadius * Math.cos(angle);  // Position along the x-axis
-        const y = tagRadius * Math.sin(angle);  // Position along the y-axis
-        const z = height; // Constant depth
-        
-        const node = createNode(x, y, z, tag, true, tag);
-        container.appendChild(node);
-    });
+            const tagRadius = radius * 0.5;
+            const tagAngleStep = (2 * Math.PI) / tags.length;
+            tags.forEach((tag, index) => {
+                const angle = tagAngleStep * index;
+                const x = tagRadius * Math.cos(angle);
+                const y = tagRadius * Math.sin(angle);
+                const z = height;
+                
+                const node = createNode(x, y, z, tag, true, tag);
+                container.appendChild(node);
+            });
 
-    // Create connections (links between items and tags)
-    items.forEach(item => {
-        const itemNode = nodeElements.get(item.id);
-        item.tags.forEach(tag => {
-            const tagNode = nodeElements.get(tag);
-            if (itemNode && tagNode) {
-                const startPos = itemNode.getAttribute('position');
-                const endPos = tagNode.getAttribute('position');
-                const line = createLine(
-                    `${startPos.x} ${startPos.y} ${startPos.z}`,
-                    `${endPos.x} ${endPos.y} ${endPos.z}`,
-                    item.id,
-                    tag
-                );
-                container.appendChild(line);
+            items.forEach(item => {
+                const itemNode = nodeElements.get(item.id);
+                item.tags.forEach(tag => {
+                    const tagNode = nodeElements.get(tag);
+                    if (itemNode && tagNode) {
+                        const startPos = itemNode.getAttribute('position');
+                        const endPos = tagNode.getAttribute('position');
+                        const line = createLine(
+                            `${startPos.x} ${startPos.y} ${startPos.z}`,
+                            `${endPos.x} ${endPos.y} ${endPos.z}`,
+                            item.id,
+                            tag
+                        );
+                        container.appendChild(line);
+                    }
+                });
+            });
+        }
+
+        function createForceSimulation() {
+            const nodes = [];
+            const links = [];
+
+            items.forEach(item => {
+                nodes.push({
+                    id: item.id,
+                    title: item.title,
+                    isTag: false,
+                    // Reduced initial spread for physics simulation
+                    x: Math.random() * 10 - 5,
+                    y: Math.random() * 10 - 5,
+                    z: Math.random() * 10 - 5
+                });
+            });
+
+            tags.forEach(tag => {
+                nodes.push({
+                    id: tag,
+                    title: tag,
+                    isTag: true,
+                    x: Math.random() * 10 - 5,
+                    y: Math.random() * 10 - 5,
+                    z: Math.random() * 10 - 5
+                });
+            });
+
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    links.push({
+                        source: nodes.find(n => n.id === item.id),
+                        target: nodes.find(n => n.id === tag)
+                    });
+                });
+            });
+
+            return d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).distance(4))
+                .force("charge", d3.forceManyBody().strength(-20))
+                .force("center", d3.forceCenter(0, 0))
+                .force("collide", d3.forceCollide(1.5))
+                .velocityDecay(0.3)
+                .alphaTarget(0.1);
+        }
+
+        function updateNodesFromSimulation() {
+            simulation.nodes().forEach(node => {
+                const nodeEntity = nodeElements.get(node.id);
+                if (nodeEntity) {
+                    nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
+                }
+            });
+            updateLines();
+        }
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            if (physicsEnabled) {
+                simulation = createForceSimulation();
+                simulation.on('tick', updateNodesFromSimulation);
+            } else {
+                if (simulation) {
+                    simulation.stop();
+                }
+                createCircularLayout();
             }
-        });
-    });
-}
-
-
-
-        
-
-            // Function to update node positions during the simulation
-function updateNodesFromSimulation() {
-    // Loop through all nodes and update their position in the 3D world
-    simulation.nodes().forEach(node => {
-        const nodeEntity = nodeElements.get(node.id);
-        if (nodeEntity) {
-            // Set the position attribute for the node entity
-            nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
         }
-    });
-
-    // Update lines (connections) between nodes
-    updateLines();
-}
-
-// Toggle physics simulation on/off
-function togglePhysics() {
-    physicsEnabled = !physicsEnabled;
-
-    if (physicsEnabled) {
-        // Restart the force simulation when turning physics on
-        simulation = createForceSimulation();
-        
-        // Bind the tick event to update node positions on every simulation step
-        simulation.on('tick', updateNodesFromSimulation);
-    } else {
-        if (simulation) {
-            // Stop the simulation when turning physics off
-            simulation.stop();
-        }
-        
-        // Switch to a fixed circular layout if physics is disabled
-        createCircularLayout();
-    }
-}
-
        
-        // Initialize layout after scene loads
         document.querySelector('a-scene').addEventListener('loaded', function () {
             console.log('Scene loaded, creating layout...');
             createCircularLayout();
