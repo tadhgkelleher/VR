@@ -292,40 +292,41 @@
             });
         }
 
-      function createCircularLayout() {
+    function createCircularLayout() {
     const container = document.querySelector('#nodes');
     container.innerHTML = '';
     connections = [];
     nodeElements.clear();
     
-    const radius = 15; // Radius of the circle
-    const height = 0; // Height for vertical placement (you can adjust if needed)
+    const radius = 15;  // Radius of the circle
+    const height = 0;   // Keep height constant (this could be adjusted to move the circle up/down)
     
-    // Create item nodes (circle in the vertical plane)
+    // Create item nodes (circle in vertical plane)
     const itemAngleStep = (2 * Math.PI) / items.length;
     items.forEach((item, index) => {
         const angle = itemAngleStep * index;
         
-        // Calculate positions for the vertical circle
-        const x = radius * Math.cos(angle); // Position on the X-axis (left/right)
-        const z = radius * Math.sin(angle); // Position on the Z-axis (front/back)
-        const y = height; // Keep the same height for the nodes (0 means in front of you)
-
+        // The x and z positions form the circle in the vertical plane
+        const x = radius * Math.sin(angle); // Position along the x-axis (side to side)
+        const z = radius * Math.cos(angle); // Position along the z-axis (front to back)
+        const y = height; // Constant height (adjust if needed)
+        
+        // Now the nodes are vertically oriented
         const node = createNode(x, y, z, item.title, false, item.id);
         container.appendChild(node);
     });
 
-    // Create tag nodes (circle in the vertical plane)
-    const tagRadius = radius * 0.5; // Tags a bit closer to the center
+    // Create tag nodes (circle in vertical plane)
+    const tagRadius = radius * 0.5; // Tags are a bit closer to the center
     const tagAngleStep = (2 * Math.PI) / tags.length;
     tags.forEach((tag, index) => {
         const angle = tagAngleStep * index;
         
-        // Calculate positions for the vertical circle of tags
-        const x = tagRadius * Math.cos(angle);
-        const z = tagRadius * Math.sin(angle);
-        const y = height; // Same height for consistency
-
+        // The x and z positions for the tags in the vertical plane
+        const x = tagRadius * Math.sin(angle);  // Position along the x-axis
+        const z = tagRadius * Math.cos(angle);  // Position along the z-axis
+        const y = height; // Constant height
+        
         const node = createNode(x, y, z, tag, true, tag);
         container.appendChild(node);
     });
@@ -349,7 +350,6 @@
         });
     });
 }
-
 
 
 
