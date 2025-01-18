@@ -291,27 +291,37 @@ You said:
     // Clear existing connections (lines) each time physics is toggled
     const existingLines = container.querySelectorAll('a-entity[line]');
     existingLines.forEach(line => line.parentElement.removeChild(line));
-    
+
     if (physicsEnabled) {
-        // Apply random forces to nodes
+        // Apply forces to nodes for more realistic physics
         const nodes = document.querySelectorAll('#nodes a-entity');
         nodes.forEach(node => {
-            const randomX = (Math.random() - 0.5) * 30;
-            const randomY = (Math.random() - 0.5) * 30;
-            const randomZ = (Math.random() - 0.5) * 30;
+            // Apply a slight initial force to each node for randomness
+            const randomX = (Math.random() - 0.5) * 10;
+            const randomY = (Math.random() - 0.5) * 10;
+            const randomZ = (Math.random() - 0.5) * 10;
+
+            node.setAttribute('dynamic-body', {
+                mass: 1, // Adjust mass for better physics behavior
+                linearDamping: 0.3, // Apply some damping
+                angularDamping: 0.5, // Apply angular damping to stop rotation
+                friction: 0.9, // High friction to prevent sliding
+                restitution: 0.5 // Some bounce when colliding
+            });
+
             node.setAttribute('animation', {
                 property: 'position',
-                to: ${randomX} ${randomY} ${randomZ},
-                dur: 3000,
+                to: `${randomX} ${randomY} ${randomZ}`,
+                dur: 2000,
                 easing: 'easeInOutQuad',
-                loop: false // Prevent it from repeating forever
+                loop: false
             });
         });
 
         // After the animation is complete, update lines
         setTimeout(() => {
             updateLines();
-        }, 3000); // Wait for the duration of the animation before updating lines
+        }, 2000); // Adjusted for smoother transitions
     } else {
         // Reset layout when physics is turned off
         createCircularLayout();
