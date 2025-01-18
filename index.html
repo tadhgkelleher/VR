@@ -292,58 +292,60 @@
             });
         }
 
-        function createCircularLayout() {
-            const container = document.querySelector('#nodes');
-            container.innerHTML = '';
-            connections = [];
-            nodeElements.clear();
-            
-            const radius = 15;
-            
-            // Create item nodes
-            const itemAngleStep = (2 * Math.PI) / items.length;
-            items.forEach((item, index) => {
-                const angle = itemAngleStep * index;
-                const x = radius * Math.cos(angle);
-                const z = radius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, item.title, false, item.id);
-                container.appendChild(node);
-            });
+       function createCircularLayout() {
+    const container = document.querySelector('#nodes');
+    container.innerHTML = '';
+    connections = [];
+    nodeElements.clear();
+    
+    const radius = 15;
+    const height = 10; // This will control how far in front of you the circle is
+    
+    // Create item nodes
+    const itemAngleStep = (2 * Math.PI) / items.length;
+    items.forEach((item, index) => {
+        const angle = itemAngleStep * index;
+        const x = radius * Math.cos(angle); // X-position in the circle
+        const z = radius * Math.sin(angle); // Z-position in the circle
+        const y = height; // Set height to make the circle in front of you
+        
+        const node = createNode(x, y, z, item.title, false, item.id);
+        container.appendChild(node);
+    });
 
-            // Create tag nodes
-            const tagRadius = radius * 0.5;
-            const tagAngleStep = (2 * Math.PI) / tags.length;
-            tags.forEach((tag, index) => {
-                const angle = tagAngleStep * index;
-                const x = tagRadius * Math.cos(angle);
-                const z = tagRadius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, tag, true, tag);
-                container.appendChild(node);
-            });
+    // Create tag nodes
+    const tagRadius = radius * 0.5;
+    const tagAngleStep = (2 * Math.PI) / tags.length;
+    tags.forEach((tag, index) => {
+        const angle = tagAngleStep * index;
+        const x = tagRadius * Math.cos(angle); // X-position in the circle
+        const z = tagRadius * Math.sin(angle); // Z-position in the circle
+        const y = height; // Set height to make the circle in front of you
+        
+        const node = createNode(x, y, z, tag, true, tag);
+        container.appendChild(node);
+    });
 
-            // Create connections
-            items.forEach(item => {
-                const itemNode = nodeElements.get(item.id);
-                item.tags.forEach(tag => {
-                    const tagNode = nodeElements.get(tag);
-                    if (itemNode && tagNode) {
-                        const startPos = itemNode.getAttribute('position');
-                        const endPos = tagNode.getAttribute('position');
-                        const line = createLine(
-                            `${startPos.x} ${startPos.y} ${startPos.z}`,
-                            `${endPos.x} ${endPos.y} ${endPos.z}`,
-                            item.id,
-                            tag
-                        );
-                        container.appendChild(line);
-                    }
-                });
-            });
-        }
+    // Create connections
+    items.forEach(item => {
+        const itemNode = nodeElements.get(item.id);
+        item.tags.forEach(tag => {
+            const tagNode = nodeElements.get(tag);
+            if (itemNode && tagNode) {
+                const startPos = itemNode.getAttribute('position');
+                const endPos = tagNode.getAttribute('position');
+                const line = createLine(
+                    `${startPos.x} ${startPos.y} ${startPos.z}`,
+                    `${endPos.x} ${endPos.y} ${endPos.z}`,
+                    item.id,
+                    tag
+                );
+                container.appendChild(line);
+            }
+        });
+    });
+}
+
 
         
 
