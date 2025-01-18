@@ -271,8 +271,17 @@
                 });
             });
         } else {
-            // Reset node positions to original layout
-            createCircularLayout(); // This will maintain the edges
+            // Reset nodes to original positions (based on their initial layout)
+            const nodes = document.querySelectorAll('#nodes a-entity');
+            nodes.forEach(node => {
+                const originalPosition = node.getAttribute('position');
+                node.setAttribute('animation', {
+                    property: 'position',
+                    to: originalPosition,
+                    dur: 2000,
+                    easing: 'easeInOutQuad'
+                });
+            });
         }
     }
 </script>
