@@ -292,7 +292,7 @@
             });
         }
 
-    function createCircularLayout() {
+   function createCircularLayout() {
     const container = document.querySelector('#nodes');
     container.innerHTML = '';
     connections = [];
@@ -301,31 +301,32 @@
     const radius = 15;  // Radius of the circle
     const height = 0;   // Keep height constant (this could be adjusted to move the circle up/down)
     
-    // Create item nodes (circle in vertical plane)
+    // Create item nodes (circle in X-Y plane)
     const itemAngleStep = (2 * Math.PI) / items.length;
     items.forEach((item, index) => {
         const angle = itemAngleStep * index;
         
-        // The x and z positions form the circle in the vertical plane
-        const x = radius * Math.sin(angle); // Position along the x-axis (side to side)
-        const z = radius * Math.cos(angle); // Position along the z-axis (front to back)
-        const y = height; // Constant height (adjust if needed)
+        // The x and y positions form the circle in the X-Y plane
+        const x = radius * Math.cos(angle); // Position along the x-axis (side to side)
+        const y = radius * Math.sin(angle); // Position along the y-axis (up and down)
         
-        // Now the nodes are vertically oriented
+        const z = height; // Constant depth (adjust if needed)
+        
+        // Now the nodes are in front of the viewer
         const node = createNode(x, y, z, item.title, false, item.id);
         container.appendChild(node);
     });
 
-    // Create tag nodes (circle in vertical plane)
+    // Create tag nodes (circle in X-Y plane)
     const tagRadius = radius * 0.5; // Tags are a bit closer to the center
     const tagAngleStep = (2 * Math.PI) / tags.length;
     tags.forEach((tag, index) => {
         const angle = tagAngleStep * index;
         
-        // The x and z positions for the tags in the vertical plane
-        const x = tagRadius * Math.sin(angle);  // Position along the x-axis
-        const z = tagRadius * Math.cos(angle);  // Position along the z-axis
-        const y = height; // Constant height
+        // The x and y positions for the tags in the X-Y plane
+        const x = tagRadius * Math.cos(angle);  // Position along the x-axis
+        const y = tagRadius * Math.sin(angle);  // Position along the y-axis
+        const z = height; // Constant depth
         
         const node = createNode(x, y, z, tag, true, tag);
         container.appendChild(node);
