@@ -1,113 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VR Graph with Physics Toggle</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph-aframe@1.56.2/dist/3d-force-graph-aframe.min.js"></script>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
-      #toggle-physics {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 10;
-        padding: 10px;
-        background-color: rgba(255, 255, 255, 0.8);
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 5px;
-      }
-    </style>
-  </head>
-  <body>
-    <button id="toggle-physics">Toggle Physics</button>
-    <a-scene>
-      <!-- Sky background -->
-      <a-sky color="#000000"></a-sky>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web VR Graph with Circular Layout</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://unpkg.com/3d-force-graph-aframe"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+    }
+    button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- UI Buttons -->
+  <div id="ui">
+    <button id="togglePhysics">Toggle Physics</button>
+  </div>
 
-      <!-- Graph container -->
-      <a-entity
-        id="graph"
-        position="0 1.6 -5"
-        force-graph=""
-      ></a-entity>
+  <!-- A-Frame Scene -->
+  <a-scene>
+    <a-entity 
+      id="graph" 
+      position="0 1.6 -5"
+      graph-data="{}"
+      warmup-ticks="0"
+      cooldown-ticks="0">
+    </a-entity>
+    <a-sky color="#000"></a-sky>
+  </a-scene>
 
-      <!-- Camera and Controls -->
-      <a-entity camera look-controls position="0 1.6 0"></a-entity>
-    </a-scene>
+  <script>
+    const radius = 5; // Radius for circular layout
 
-    <script>
-      const graphData = {
-        nodes: [
-          { id: 'A', name: 'Node A', video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-          { id: 'B', name: 'Node B', video: 'https://www.youtube.com/watch?v=3JZ_D3ELwOQ' },
-          { id: 'C', name: 'Node C', video: 'https://www.youtube.com/watch?v=oHg5SJYRHA0' },
-          { id: 'D', name: 'Node D', video: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g' },
-        ],
-        links: [
-          { source: 'A', target: 'B' },
-          { source: 'A', target: 'C' },
-          { source: 'B', target: 'D' },
-          { source: 'C', target: 'D' },
-        ],
-      };
+    // Graph data
+    const graphData = {
+      nodes: [
+        { id: "1", name: "Node 1", color: "red" },
+        { id: "2", name: "Node 2", color: "blue" },
+        { id: "3", name: "Node 3", color: "green" },
+        { id: "4", name: "Node 4", color: "yellow" },
+        { id: "5", name: "Node 5", color: "purple" }
+      ].map((node, index, arr) => {
+        const angle = (index / arr.length) * 2 * Math.PI;
+        return {
+          ...node,
+          x: radius * Math.cos(angle),
+          y: 0,
+          z: radius * Math.sin(angle)
+        };
+      }),
+      links: [
+        { source: "1", target: "2" },
+        { source: "2", target: "3" },
+        { source: "3", target: "4" },
+        { source: "4", target: "5" },
+        { source: "5", target: "1" }
+      ]
+    };
 
-      const graphEl = document.querySelector('#graph');
-      const button = document.getElementById('toggle-physics');
+    // Initialize the graph
+    const graphEl = document.querySelector("#graph");
+    graphEl.setAttribute("graph-data", JSON.stringify(graphData));
 
-      let physicsEnabled = false; // Initial physics state
+    // Track physics state
+    let isPhysicsEnabled = false;
 
-      // Initialize the force-directed graph
-      const Graph = ForceGraph3D()
-        .graphData(graphData)
-        .nodeAutoColorBy('id')
-        .nodeLabel('name')
-        .nodeThreeObject(node => {
-          const sprite = new THREE.Sprite(
-            new THREE.SpriteMaterial({
-              map: new THREE.CanvasTexture(
-                generateTextTexture(node.name, 'white')
-              ),
-              depthTest: false,
-            })
-          );
-          sprite.scale.set(8, 4, 1); // Size of the sprite
-          return sprite;
-        })
-        .onNodeClick(node => {
-          const videoURL = node.video;
-          if (videoURL) {
-            window.open(videoURL, '_blank');
-          }
-        })
-        .cooldownTime(physicsEnabled ? Infinity : 0); // Set physics state
-
-      graphEl.appendChild(Graph);
-
-      // Generate texture for text labels
-      function generateTextTexture(text, color) {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        context.font = '24px Arial';
-        canvas.width = context.measureText(text).width + 20;
-        canvas.height = 30;
-        context.fillStyle = color;
-        context.fillText(text, 10, 20);
-        return canvas;
-      }
-
-      // Toggle physics state
-      button.addEventListener('click', () => {
-        physicsEnabled = !physicsEnabled;
-        Graph.cooldownTime(physicsEnabled ? Infinity : 0); // Enable/disable physics
-        button.textContent = physicsEnabled ? 'Disable Physics' : 'Enable Physics';
-      });
-    </script>
-  </body>
+    // Toggle physics button
+    document.getElementById("togglePhysics").addEventListener("click", () => {
+      isPhysicsEnabled = !isPhysicsEnabled;
+      graphEl.setAttribute("warmup-ticks", isPhysicsEnabled ? "100" : "0");
+      graphEl.setAttribute("cooldown-ticks", isPhysicsEnabled ? "100" : "0");
+    });
+  </script>
+</body>
 </html>
