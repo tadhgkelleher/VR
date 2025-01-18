@@ -147,125 +147,134 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-        // Collect all unique tags
-        const uniqueTags = new Set();
+
+
+     // Collect all unique tags
+    const uniqueTags = new Set();
+    items.forEach(item => {
+        item.tags.forEach(tag => uniqueTags.add(tag));
+    });
+    const tags = Array.from(uniqueTags);
+
+    let physicsEnabled = false;
+
+    function createNode(x, y, z, title, isTag = false) {
+        const nodeEntity = document.createElement('a-entity');
+        nodeEntity.setAttribute('position', ${x} ${y} ${z});
+
+        // Create sphere for node
+        const sphere = document.createElement('a-sphere');
+        sphere.setAttribute('radius', isTag ? 0.4 : 0.3);
+        sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
+        nodeEntity.appendChild(sphere);
+
+        // Create text label
+        const text = document.createElement('a-text');
+        text.setAttribute('value', title);
+        text.setAttribute('position', '0 0.5 0');
+        text.setAttribute('scale', '0.7 0.7 0.7');
+        text.setAttribute('align', 'center');
+        text.setAttribute('color', 'white');
+        text.setAttribute('look-at', '[camera]');
+        nodeEntity.appendChild(text);
+
+        return nodeEntity;
+    }
+
+    function createLine(start, end) {
+        const line = document.createElement('a-entity');
+        line.setAttribute('line', {
+            start: start,
+            end: end,
+            color: '#666666',
+            opacity: 0.5
+        });
+        return line;
+    }
+
+    function createCircularLayout() {
+        const container = document.querySelector('#nodes');
+        container.innerHTML = ''; // Clear existing nodes
+
+        const nodeMap = new Map();
+        const radius = 15; // Increased radius for more space
+
+        // Create item nodes in outer circle
+        const itemAngleStep = (2 * Math.PI) / items.length;
+        items.forEach((item, index) => {
+            const angle = itemAngleStep * index;
+            const x = radius * Math.cos(angle);
+            const z = radius * Math.sin(angle);
+            const y = 0;
+
+            const node = createNode(x, y, z, item.title);
+            container.appendChild(node);
+            nodeMap.set(item.id, {x, y, z});
+        });
+
+        // Create tag nodes in inner circle
+        const tagRadius = radius * 0.5;
+        const tagAngleStep = (2 * Math.PI) / tags.length;
+        tags.forEach((tag, index) => {
+            const angle = tagAngleStep * index;
+            const x = tagRadius * Math.cos(angle);
+            const z = tagRadius * Math.sin(angle);
+            const y = 0;
+
+            const node = createNode(x, y, z, tag, true);
+            container.appendChild(node);
+            nodeMap.set(tag, {x, y, z});
+        });
+
+        // Create connections (edges)
+        const edges = [];
         items.forEach(item => {
-            item.tags.forEach(tag => uniqueTags.add(tag));
-        });
-        const tags = Array.from(uniqueTags);
-
-        let physicsEnabled = false;
-
-        function createNode(x, y, z, title, isTag = false) {
-            const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', ${x} ${y} ${z});
-
-            // Create sphere for node
-            const sphere = document.createElement('a-sphere');
-            sphere.setAttribute('radius', isTag ? 0.4 : 0.3);
-            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
-            nodeEntity.appendChild(sphere);
-
-            // Create text label
-            const text = document.createElement('a-text');
-            text.setAttribute('value', title);
-            text.setAttribute('position', '0 0.5 0');
-            text.setAttribute('scale', '0.7 0.7 0.7');
-            text.setAttribute('align', 'center');
-            text.setAttribute('color', 'white');
-            text.setAttribute('look-at', '[camera]');
-            nodeEntity.appendChild(text);
-
-            return nodeEntity;
-        }
-
-        function createLine(start, end) {
-            const line = document.createElement('a-entity');
-            line.setAttribute('line', {
-                start: start,
-                end: end,
-                color: '#666666',
-                opacity: 0.5
+            const itemPos = nodeMap.get(item.id);
+            item.tags.forEach(tag => {
+                const tagPos = nodeMap.get(tag);
+                if (itemPos && tagPos) {
+                    const line = createLine(
+                        ${itemPos.x} ${itemPos.y} ${itemPos.z},
+                        ${tagPos.x} ${tagPos.y} ${tagPos.z}
+                    );
+                    edges.push(line);
+                    container.appendChild(line);
+                }
             });
-            return line;
-        }
-
-        function createCircularLayout() {
-            const container = document.querySelector('#nodes');
-            container.innerHTML = ''; // Clear existing nodes
-            
-            const nodeMap = new Map();
-            const radius = 15; // Increased radius for more space
-            
-            // Create item nodes in outer circle
-            const itemAngleStep = (2 * Math.PI) / items.length;
-            items.forEach((item, index) => {
-                const angle = itemAngleStep * index;
-                const x = radius * Math.cos(angle);
-                const z = radius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, item.title);
-                container.appendChild(node);
-                nodeMap.set(item.id, {x, y, z});
-            });
-
-            // Create tag nodes in inner circle
-            const tagRadius = radius * 0.5;
-            const tagAngleStep = (2 * Math.PI) / tags.length;
-            tags.forEach((tag, index) => {
-                const angle = tagAngleStep * index;
-                const x = tagRadius * Math.cos(angle);
-                const z = tagRadius * Math.sin(angle);
-                const y = 0;
-                
-                const node = createNode(x, y, z, tag, true);
-                container.appendChild(node);
-                nodeMap.set(tag, {x, y, z});
-            });
-
-            // Create connections
-            items.forEach(item => {
-                const itemPos = nodeMap.get(item.id);
-                item.tags.forEach(tag => {
-                    const tagPos = nodeMap.get(tag);
-                    if (itemPos && tagPos) {
-                        const line = createLine(
-                            ${itemPos.x} ${itemPos.y} ${itemPos.z},
-                            ${tagPos.x} ${tagPos.y} ${tagPos.z}
-                        );
-                        container.appendChild(line);
-                    }
-                });
-            });
-        }
-
-        // Initialize layout after scene loads
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            console.log('Scene loaded, creating layout...');
-            createCircularLayout();
         });
 
-        function togglePhysics() {
-            physicsEnabled = !physicsEnabled;
-            if (physicsEnabled) {
-                // Apply random forces to nodes
-                const nodes = document.querySelectorAll('#nodes a-entity');
-                nodes.forEach(node => {
-                    const randomX = (Math.random() - 0.5) * 30;
-                    const randomY = (Math.random() - 0.5) * 30;
-                    const randomZ = (Math.random() - 0.5) * 30;
-                    node.setAttribute('animation', {
-                        property: 'position',
-                        to: ${randomX} ${randomY} ${randomZ},
-                        dur: 3000,
-                        easing: 'easeInOutQuad'
-                    });
+        // Store edges in a global variable to keep them intact when physics is toggled
+        window.edges = edges;
+    }
+
+    // Initialize layout after scene loads
+    document.querySelector('a-scene').addEventListener('loaded', function () {
+        console.log('Scene loaded, creating layout...');
+        createCircularLayout();
+    });
+
+    function togglePhysics() {
+        physicsEnabled = !physicsEnabled;
+
+        if (physicsEnabled) {
+            // Apply random forces to nodes
+            const nodes = document.querySelectorAll('#nodes a-entity');
+            nodes.forEach(node => {
+                const randomX = (Math.random() - 0.5) * 30;
+                const randomY = (Math.random() - 0.5) * 30;
+                const randomZ = (Math.random() - 0.5) * 30;
+                node.setAttribute('animation', {
+                    property: 'position',
+                    to: ${randomX} ${randomY} ${randomZ},
+                    dur: 3000,
+                    easing: 'easeInOutQuad'
                 });
-            } else {
-                createCircularLayout();
-            }
+            });
+        } else {
+            // Reset node positions to original layout
+            createCircularLayout(); // This will maintain the edges
         }
-    </script>
+    }
+</script>
 </body>
 </html>
