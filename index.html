@@ -1,54 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Graph with Circular Layout</title>
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://unpkg.com/3d-force-graph-aframe"></script>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-    #ui {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 100;
-    }
-    button {
-      margin: 5px;
-      padding: 10px;
-      font-size: 16px;
-    }
-  </style>
+    <title>VR Connections Graph</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <style>
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .toggle-button {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .toggle-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 <body>
-  <!-- UI Buttons -->
-  <div id="ui">
-    <button id="togglePhysics">Toggle Physics</button>
-  </div>
+    <div class="controls">
+        <h2>VR Connections Graph</h2>
+        <p>Use VR headset or mouse to explore</p>
+        <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
+    </div>
+    
+    <a-scene>
+        <!-- Environment -->
+        <a-sky color="#1a1a1a"></a-sky>
+        <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
+        
+        <!-- Camera -->
+        <a-entity position="0 1.6 25">
+            <a-camera look-controls wasd-controls>
+                <a-cursor color="#4CC3D9"></a-cursor>
+            </a-camera>
+        </a-entity>
+        
+        <!-- Lighting -->
+        <a-light type="ambient" color="#BBB"></a-light>
+        <a-light type="directional" position="0 1 1" intensity="0.6"></a-light>
 
-  <!-- A-Frame Scene -->
-  <a-scene>
-    <a-entity 
-      id="graph" 
-      position="0 1.6 -5"
-      graph-data="{}"
-      warmup-ticks="0"
-      cooldown-ticks="0">
-    </a-entity>
-    <a-sky color="#000"></a-sky>
-  </a-scene>
+        <!-- Nodes container -->
+        <a-entity id="nodes"></a-entity>
+    </a-scene>
 
-  <script>
-    const radius = 10; // Radius for circular layout
-
-    // Dataset
-    const data = [
-      
-  { "id": 1, "title": "Summerhill Dawn", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/NgAvUmezuC8" },
+    <script>
+        // Full dataset from original
+        const items = [
+              { "id": 1, "title": "Summerhill Dawn", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/NgAvUmezuC8" },
   { "id": 2, "title": "Trouble", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/LqgQawC0qCc" },
   { "id": 3, "title": "Beautiful Goodbye", "tags": ["Cilla Black", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/I1WocWuNLVg" },
   { "id": 4, "title": "Single", "tags": ["Natasha Bedingfield", "RTE's Late Late Show", "video"], "videoUrl": "https://www.youtube.com/embed/3kXZc_isrBA" },
@@ -132,48 +144,128 @@
   { "id": 82, "title": "Thomas Walsh", "tags": ["Artist", "Ivo Novello Winner"] },
   { "id": 83, "title": "Robbie Malone", "tags": ["Artist", "David Gray"] },
   { "id": 84, "title": "Pete Wingfield", "tags": ["Producer", "Paul McCartney", "Everly Bros", "Van Morrison"] },
-  { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] },
-    ];
+  { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
+        ];
 
-    // Generate nodes and links
-    const nodes = data.map((item, index) => {
-      const angle = (index / data.length) * 2 * Math.PI;
-      return {
-        id: item.id,
-        title: item.title,
-        tags: item.tags,
-        videoUrl: item.videoUrl || null,
-        x: radius * Math.cos(angle),
-        y: 0,
-        z: radius * Math.sin(angle)
-      };
-    });
+        // Collect all unique tags
+        const uniqueTags = new Set();
+        items.forEach(item => {
+            item.tags.forEach(tag => uniqueTags.add(tag));
+        });
+        const tags = Array.from(uniqueTags);
 
-    const links = [];
-    data.forEach((item1, index1) => {
-      data.forEach((item2, index2) => {
-        if (index1 < index2 && item1.tags.some(tag => item2.tags.includes(tag))) {
-          links.push({ source: item1.id, target: item2.id });
+        let physicsEnabled = false;
+
+        function createNode(x, y, z, title, isTag = false) {
+            const nodeEntity = document.createElement('a-entity');
+            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+
+            // Create sphere for node
+            const sphere = document.createElement('a-sphere');
+            sphere.setAttribute('radius', isTag ? 0.4 : 0.3);
+            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
+            nodeEntity.appendChild(sphere);
+
+            // Create text label
+            const text = document.createElement('a-text');
+            text.setAttribute('value', title);
+            text.setAttribute('position', '0 0.5 0');
+            text.setAttribute('scale', '0.7 0.7 0.7');
+            text.setAttribute('align', 'center');
+            text.setAttribute('color', 'white');
+            text.setAttribute('look-at', '[camera]');
+            nodeEntity.appendChild(text);
+
+            return nodeEntity;
         }
-      });
-    });
 
-    // Graph data
-    const graphData = { nodes, links };
+        function createLine(start, end) {
+            const line = document.createElement('a-entity');
+            line.setAttribute('line', {
+                start: start,
+                end: end,
+                color: '#666666',
+                opacity: 0.5
+            });
+            return line;
+        }
 
-    // Initialize the graph
-    const graphEl = document.querySelector("#graph");
-    graphEl.setAttribute("graph-data", JSON.stringify(graphData));
+        function createCircularLayout() {
+            const container = document.querySelector('#nodes');
+            container.innerHTML = ''; // Clear existing nodes
+            
+            const nodeMap = new Map();
+            const radius = 15; // Increased radius for more space
+            
+            // Create item nodes in outer circle
+            const itemAngleStep = (2 * Math.PI) / items.length;
+            items.forEach((item, index) => {
+                const angle = itemAngleStep * index;
+                const x = radius * Math.cos(angle);
+                const z = radius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, item.title);
+                container.appendChild(node);
+                nodeMap.set(item.id, {x, y, z});
+            });
 
-    // Track physics state
-    let isPhysicsEnabled = false;
+            // Create tag nodes in inner circle
+            const tagRadius = radius * 0.5;
+            const tagAngleStep = (2 * Math.PI) / tags.length;
+            tags.forEach((tag, index) => {
+                const angle = tagAngleStep * index;
+                const x = tagRadius * Math.cos(angle);
+                const z = tagRadius * Math.sin(angle);
+                const y = 0;
+                
+                const node = createNode(x, y, z, tag, true);
+                container.appendChild(node);
+                nodeMap.set(tag, {x, y, z});
+            });
 
-    // Toggle physics button
-    document.getElementById("togglePhysics").addEventListener("click", () => {
-      isPhysicsEnabled = !isPhysicsEnabled;
-      graphEl.setAttribute("warmup-ticks", isPhysicsEnabled ? "100" : "0");
-      graphEl.setAttribute("cooldown-ticks", isPhysicsEnabled ? "100" : "0");
-    });
-  </script>
+            // Create connections
+            items.forEach(item => {
+                const itemPos = nodeMap.get(item.id);
+                item.tags.forEach(tag => {
+                    const tagPos = nodeMap.get(tag);
+                    if (itemPos && tagPos) {
+                        const line = createLine(
+                            `${itemPos.x} ${itemPos.y} ${itemPos.z}`,
+                            `${tagPos.x} ${tagPos.y} ${tagPos.z}`
+                        );
+                        container.appendChild(line);
+                    }
+                });
+            });
+        }
+
+        // Initialize layout after scene loads
+        document.querySelector('a-scene').addEventListener('loaded', function () {
+            console.log('Scene loaded, creating layout...');
+            createCircularLayout();
+        });
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            if (physicsEnabled) {
+                // Apply random forces to nodes
+                const nodes = document.querySelectorAll('#nodes a-entity');
+                nodes.forEach(node => {
+                    const randomX = (Math.random() - 0.5) * 30;
+                    const randomY = (Math.random() - 0.5) * 30;
+                    const randomZ = (Math.random() - 0.5) * 30;
+                    node.setAttribute('animation', {
+                        property: 'position',
+                        to: `${randomX} ${randomY} ${randomZ}`,
+                        dur: 3000,
+                        easing: 'easeInOutQuad'
+                    });
+                });
+            } else {
+                createCircularLayout();
+            }
+        }
+    </script>
 </body>
 </html>
