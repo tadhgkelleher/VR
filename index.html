@@ -292,14 +292,15 @@
             });
         }
 
-       function createCircularLayout() {
+      function createCircularLayout() {
     const container = document.querySelector('#nodes');
     container.innerHTML = '';
     connections = [];
     nodeElements.clear();
     
     const radius = 15;
-    const height = 10; // This will control how far in front of you the circle is
+    const height = 0; // We'll keep height at 0 to make it in front of you
+    const wheelTilt = Math.PI / 2; // The angle to tilt the wheel upright (90 degrees)
     
     // Create item nodes
     const itemAngleStep = (2 * Math.PI) / items.length;
@@ -307,9 +308,13 @@
         const angle = itemAngleStep * index;
         const x = radius * Math.cos(angle); // X-position in the circle
         const z = radius * Math.sin(angle); // Z-position in the circle
-        const y = height; // Set height to make the circle in front of you
+        const y = height; // Constant height at zero to keep the nodes in front of you
+
+        // Apply a tilt (rotate the circle around the X-axis)
+        const rotatedX = x * Math.cos(wheelTilt) - z * Math.sin(wheelTilt);
+        const rotatedZ = x * Math.sin(wheelTilt) + z * Math.cos(wheelTilt);
         
-        const node = createNode(x, y, z, item.title, false, item.id);
+        const node = createNode(rotatedX, y, rotatedZ, item.title, false, item.id);
         container.appendChild(node);
     });
 
@@ -320,9 +325,13 @@
         const angle = tagAngleStep * index;
         const x = tagRadius * Math.cos(angle); // X-position in the circle
         const z = tagRadius * Math.sin(angle); // Z-position in the circle
-        const y = height; // Set height to make the circle in front of you
+        const y = height; // Constant height at zero to keep the nodes in front of you
+
+        // Apply a tilt (rotate the circle around the X-axis)
+        const rotatedX = x * Math.cos(wheelTilt) - z * Math.sin(wheelTilt);
+        const rotatedZ = x * Math.sin(wheelTilt) + z * Math.cos(wheelTilt);
         
-        const node = createNode(x, y, z, tag, true, tag);
+        const node = createNode(rotatedX, y, rotatedZ, tag, true, tag);
         container.appendChild(node);
     });
 
@@ -345,6 +354,7 @@
         });
     });
 }
+
 
 
         
