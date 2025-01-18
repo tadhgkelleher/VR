@@ -34,7 +34,6 @@
     <div class="controls">
         <h2>VR Connections Graph</h2>
         <p>Use VR headset or mouse to explore</p>
-        <p>Click and drag nodes to move them</p>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
     </div>
     
@@ -46,7 +45,7 @@
         <!-- Camera -->
         <a-entity position="0 1.6 25">
             <a-camera look-controls wasd-controls>
-                <a-cursor color="#4CC3D9" raycaster="objects: .draggable"></a-cursor>
+                <a-cursor color="#4CC3D9"></a-cursor>
             </a-camera>
         </a-entity>
         
@@ -57,7 +56,6 @@
         <!-- Nodes container -->
         <a-entity id="nodes"></a-entity>
     </a-scene>
-
 
     <script>
         // Full dataset from original
@@ -149,7 +147,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-            const uniqueTags = new Set();
+             const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -159,12 +157,6 @@
         let connections = [];
         let nodeElements = new Map();
         let simulation;
-        let draggedNode = null;
-        let camera;
-        let raycaster;
-        let mousePosition = new THREE.Vector2();
-        let dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-        let dragPoint = new THREE.Vector3();
 
         // Create force simulation
         function createForceSimulation() {
@@ -173,35 +165,25 @@
 
             // Add item nodes
             items.forEach(item => {
-                const nodeEntity = nodeElements.get(item.id);
-                const position = nodeEntity.getAttribute('position');
                 nodes.push({
                     id: item.id,
                     title: item.title,
                     isTag: false,
-                    x: position.x,
-                    y: position.y,
-                    z: position.z,
-                    fx: null,
-                    fy: null,
-                    fz: null
+                    x: Math.random() * 30 - 15,
+                    y: Math.random() * 30 - 15,
+                    z: Math.random() * 30 - 15
                 });
             });
 
             // Add tag nodes
             tags.forEach(tag => {
-                const nodeEntity = nodeElements.get(tag);
-                const position = nodeEntity.getAttribute('position');
                 nodes.push({
                     id: tag,
                     title: tag,
                     isTag: true,
-                    x: position.x,
-                    y: position.y,
-                    z: position.z,
-                    fx: null,
-                    fy: null,
-                    fz: null
+                    x: Math.random() * 30 - 15,
+                    y: Math.random() * 30 - 15,
+                    z: Math.random() * 30 - 15
                 });
             });
 
@@ -228,7 +210,6 @@
             const nodeEntity = document.createElement('a-entity');
             nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
             nodeEntity.setAttribute('data-id', id);
-            nodeEntity.setAttribute('class', 'draggable');
 
             const sphere = document.createElement('a-sphere');
             sphere.setAttribute('radius', isTag ? 0.4 : 0.3);
@@ -244,65 +225,8 @@
             text.setAttribute('look-at', '[camera]');
             nodeEntity.appendChild(text);
 
-            // Add drag event listeners
-            nodeEntity.addEventListener('mousedown', startDrag);
-            nodeEntity.addEventListener('mouseup', endDrag);
-            nodeEntity.addEventListener('mousemove', drag);
-
             nodeElements.set(id, nodeEntity);
             return nodeEntity;
-        }
-
-        function startDrag(event) {
-            if (!physicsEnabled) return;
-            
-            const nodeId = event.target.parentElement.getAttribute('data-id');
-            draggedNode = simulation.nodes().find(n => n.id == nodeId);
-            
-            if (draggedNode) {
-                draggedNode.fx = draggedNode.x;
-                draggedNode.fy = draggedNode.y;
-                draggedNode.fz = draggedNode.z;
-            }
-        }
-
-        function drag(event) {
-            if (!draggedNode || !physicsEnabled) return;
-
-            // Get camera position and direction
-            const cameraEl = document.querySelector('[camera]');
-            const cameraPos = new THREE.Vector3();
-            cameraEl.object3D.getWorldPosition(cameraPos);
-            
-            // Update mouse position
-            const rect = event.target.closest('a-scene').canvas.getBoundingClientRect();
-            mousePosition.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mousePosition.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            // Update raycaster
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mousePosition, cameraEl.object3D.children[0]);
-
-            // Calculate intersection with drag plane
-            dragPlane.normal.copy(cameraPos).normalize();
-            const intersection = new THREE.Vector3();
-            raycaster.ray.intersectPlane(dragPlane, intersection);
-
-            // Update node position
-            draggedNode.fx = intersection.x;
-            draggedNode.fy = intersection.y;
-            draggedNode.fz = intersection.z;
-            
-            simulation.alpha(1).restart();
-        }
-
-        function endDrag() {
-            if (!draggedNode) return;
-            
-            draggedNode.fx = null;
-            draggedNode.fy = null;
-            draggedNode.fz = null;
-            draggedNode = null;
         }
 
         function createLine(start, end, startId, endId) {
