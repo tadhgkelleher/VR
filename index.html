@@ -24,7 +24,7 @@
         }
 
         // Apply the new zoom level to the camera position (on the Z-axis)
-        camera.setAttribute('position', `0 1 ${zoomLevel}`);
+        camera.setAttribute('position', 0 1 ${zoomLevel});
     });
 </script>
     <style>
@@ -181,7 +181,7 @@
 
         function createNode(x, y, z, title, isTag = false) {
             const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+            nodeEntity.setAttribute('position', ${x} ${y} ${z});
 
             // Create sphere for node
             const sphere = document.createElement('a-sphere');
@@ -213,11 +213,7 @@
             return line;
         }
 
-   Share
-
-
-You said:
-  function createCircularLayout() {
+     function createCircularLayout() {
     const container = document.querySelector('#nodes');
     container.innerHTML = ''; // Clear existing nodes
     
@@ -291,43 +287,60 @@ You said:
     // Clear existing connections (lines) each time physics is toggled
     const existingLines = container.querySelectorAll('a-entity[line]');
     existingLines.forEach(line => line.parentElement.removeChild(line));
-
+    
     if (physicsEnabled) {
-        // Apply forces to nodes for more realistic physics
+        // Apply random forces to nodes
         const nodes = document.querySelectorAll('#nodes a-entity');
         nodes.forEach(node => {
-            // Apply a slight initial force to each node for randomness
-            const randomX = (Math.random() - 0.5) * 10;
-            const randomY = (Math.random() - 0.5) * 10;
-            const randomZ = (Math.random() - 0.5) * 10;
-
-            node.setAttribute('dynamic-body', {
-                mass: 1, // Adjust mass for better physics behavior
-                linearDamping: 0.3, // Apply some damping
-                angularDamping: 0.5, // Apply angular damping to stop rotation
-                friction: 0.9, // High friction to prevent sliding
-                restitution: 0.5 // Some bounce when colliding
-            });
-
+            const randomX = (Math.random() - 0.5) * 30;
+            const randomY = (Math.random() - 0.5) * 30;
+            const randomZ = (Math.random() - 0.5) * 30;
             node.setAttribute('animation', {
                 property: 'position',
-                to: `${randomX} ${randomY} ${randomZ}`,
-                dur: 2000,
+                to: ${randomX} ${randomY} ${randomZ},
+                dur: 3000,
                 easing: 'easeInOutQuad',
-                loop: false
+                loop: false // Prevent it from repeating forever
             });
         });
 
         // After the animation is complete, update lines
         setTimeout(() => {
             updateLines();
-        }, 2000); // Adjusted for smoother transitions
+        }, 3000); // Wait for the duration of the animation before updating lines
     } else {
         // Reset layout when physics is turned off
         createCircularLayout();
     }
 }
 
+// Function to update lines after physics animation
+function updateLines() {
+    const container = document.querySelector('#nodes');
+    const nodeMap = new Map();
+    
+    // Recreate the node map with current positions
+    const nodes = container.querySelectorAll('a-entity');
+    nodes.forEach(node => {
+        const position = node.getAttribute('position');
+        nodeMap.set(node.getAttribute('title'), position);
+    });
+
+    // Create new lines between items and their tags
+    items.forEach(item => {
+        const itemPos = nodeMap.get(item.title);
+        item.tags.forEach(tag => {
+            const tagPos = nodeMap.get(tag);
+            if (itemPos && tagPos) {
+                const line = createLine(
+                    ${itemPos.x} ${itemPos.y} ${itemPos.z},
+                    ${tagPos.x} ${tagPos.y} ${tagPos.z}
+                );
+                container.appendChild(line);
+            }
+        });
+    });
+}
 
 
     </script>
