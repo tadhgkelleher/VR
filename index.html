@@ -187,15 +187,15 @@
             const nodes = [];
             const links = [];
 
-            // Create nodes with very small initial spread
+            // Create nodes with larger initial spread
             items.forEach(item => {
                 nodes.push({
                     id: item.id,
                     title: item.title,
                     isTag: false,
-                    x: Math.random() * 2 - 1, // Reduced initial spread
-                    y: Math.random() * 2 - 1,
-                    z: Math.random() * 2 - 1
+                    x: Math.random() * 20 - 10,  // Larger initial spread
+                    y: Math.random() * 20 - 10,
+                    z: Math.random() * 20 - 10
                 });
             });
 
@@ -204,9 +204,9 @@
                     id: tag,
                     title: tag,
                     isTag: true,
-                    x: Math.random() * 2 - 1, // Reduced initial spread
-                    y: Math.random() * 2 - 1,
-                    z: Math.random() * 2 - 1
+                    x: Math.random() * 20 - 10,  // Larger initial spread
+                    y: Math.random() * 20 - 10,
+                    z: Math.random() * 20 - 10
                 });
             });
 
@@ -220,36 +220,44 @@
                 });
             });
 
-            // Create simulation with gentler forces
+            // Create simulation with space-like forces
             const sim = d3.forceSimulation(nodes)
                 .force("link", d3.forceLink(links)
-                    .distance(2)        // Shorter link distance
-                    .strength(0.2))     // Weaker link strength
+                    .distance(8)         // Longer link distance
+                    .strength(0.1))      // Weaker link strength for more floating
                 .force("charge", d3.forceManyBody()
-                    .strength(-1)       // Much weaker repulsion
-                    .distanceMax(10))   // Limit the range of repulsion
+                    .strength(-10)       // Stronger repulsion
+                    .distanceMax(30))    // Longer range of repulsion
                 .force("center", d3.forceCenter(0, 0)
-                    .strength(0.1))     // Gentle centering force
-                .force("collide", d3.forceCollide(1)
-                    .strength(0.5))     // Moderate collision strength
-                .velocityDecay(0.7)     // Higher decay for slower movement
-                .alphaMin(0.001)        // Lower minimum alpha for smoother simulation
-                .alphaDecay(0.02);      // Slower decay for more controlled movement
+                    .strength(0.05))     // Very weak centering force
+                .force("collide", d3.forceCollide(2)
+                    .strength(0.2))      // Light collision
+                .velocityDecay(0.3)      // Lower decay for more drifting
+                .alphaMin(0.001)
+                .alphaDecay(0.01);       // Slower decay for longer movement
 
-            // Add containment force to keep nodes within bounds
+            // Add a very gentle containment force
             sim.force("box", () => {
-                const bound = 6; // Maximum distance from center
+                const bound = 15; // Larger boundary
                 nodes.forEach(node => {
-                    if (Math.abs(node.x) > bound) node.x = Math.sign(node.x) * bound;
-                    if (Math.abs(node.y) > bound) node.y = Math.sign(node.y) * bound;
-                    if (Math.abs(node.z) > bound) node.z = Math.sign(node.z) * bound;
+                    if (Math.abs(node.x) > bound) {
+                        const force = (Math.abs(node.x) - bound) * 0.05;
+                        node.x -= Math.sign(node.x) * force;
+                    }
+                    if (Math.abs(node.y) > bound) {
+                        const force = (Math.abs(node.y) - bound) * 0.05;
+                        node.y -= Math.sign(node.y) * force;
+                    }
+                    if (Math.abs(node.z) > bound) {
+                        const force = (Math.abs(node.z) - bound) * 0.05;
+                        node.z -= Math.sign(node.z) * force;
+                    }
                 });
             });
 
             return sim;
         }
 
-        // [Previous createNode, createLine, and updateLines functions remain the same]
         function createNode(x, y, z, title, isTag = false, id) {
             const nodeEntity = document.createElement('a-entity');
             nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
@@ -279,7 +287,7 @@
                 start: start,
                 end: end,
                 color: '#666666',
-                opacity: 0.5
+                opacity: 0.3  // More subtle connections
             });
             
             connections.push({
@@ -304,7 +312,7 @@
                         start: `${startPos.x} ${startPos.y} ${startPos.z}`,
                         end: `${endPos.x} ${endPos.y} ${endPos.z}`,
                         color: '#666666',
-                        opacity: 0.5
+                        opacity: 0.3  // More subtle connections
                     });
                 }
             });
@@ -342,6 +350,7 @@
                 container.appendChild(node);
             });
 
+            // Fixed the createLine call by adding all necessary parameters
             items.forEach(item => {
                 const itemNode = nodeElements.get(item.id);
                 item.tags.forEach(tag => {
@@ -351,6 +360,7 @@
                         const endPos = tagNode.getAttribute('position');
                         const line = createLine(
                             `${startPos.x} ${startPos.y} ${startPos.z}`,
+                            `${endPos.x} ${endPos.y} ${endPos.z}`,
                             item.id,
                             tag
                         );
