@@ -355,28 +355,70 @@
 
         
 
-        function updateNodesFromSimulation() {
-            simulation.nodes().forEach(node => {
-                const nodeEntity = nodeElements.get(node.id);
-                if (nodeEntity) {
-                    nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
-                }
-            });
-            updateLines();
-        }
+     / Updated force simulation creation function
+function createForceSimulation() {
+    const nodes = [];
+    const links = [];
 
-        function togglePhysics() {
-            physicsEnabled = !physicsEnabled;
-            if (physicsEnabled) {
-                simulation = createForceSimulation();
-                simulation.on('tick', updateNodesFromSimulation);
-            } else {
-                if (simulation) {
-                    simulation.stop();
-                }
-                createCircularLayout();
-            }
-        }
+    // Add item nodes
+    items.forEach(item => {
+        nodes.push({
+            id: item.id,
+            title: item.title,
+            isTag: false,
+            x: Math.random() * 15 - 7.5,  // Reduced spread distance
+            y: Math.random() * 15 - 7.5,  // Reduced spread distance
+            z: Math.random() * 15 - 7.5   // Reduced spread distance
+        });
+    });
+
+    // Add tag nodes
+    tags.forEach(tag => {
+        nodes.push({
+            id: tag,
+            title: tag,
+            isTag: true,
+            x: Math.random() * 15 - 7.5,  // Reduced spread distance
+            y: Math.random() * 15 - 7.5,  // Reduced spread distance
+            z: Math.random() * 15 - 7.5   // Reduced spread distance
+        });
+    });
+
+    // Create links
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
+            });
+        });
+    });
+
+    return d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).distance(15))  // Increased link distance for slower spread
+        .force("charge", d3.forceManyBody().strength(-15))  // Reduced charge strength for a gentler pull
+        .force("center", d3.forceCenter(0, 0))  // Keep center if working in 2D
+        .force("collide", d3.forceCollide(5))  // Increased collide distance for slower spread
+        .velocityDecay(0.1)  // Slower decay for more gradual movement
+        .alphaTarget(0.3);  // Higher alphaTarget for smoother stop
+}
+
+// Adjust camera and physics toggle
+function togglePhysics() {
+    physicsEnabled = !physicsEnabled;
+    if (physicsEnabled) {
+        simulation = createForceSimulation();
+        simulation.on('tick', () => {
+            nodes.forEach(node => {
+                const nodeEntity = nodeElements.get(node.id);
+                nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
+            });
+        });
+    } else {
+        simulation.stop();
+        // Optional: Reset node positions here if desired
+    }
+}
 
         // Initialize layout after scene loads
         document.querySelector('a-scene').addEventListener('loaded', function () {
