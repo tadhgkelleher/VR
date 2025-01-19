@@ -172,7 +172,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-     // Calculate node sizes based on connections
+      // Calculate node sizes based on connections
         function calculateNodeSizes() {
             const connections = new Map();
             items.forEach(item => {
@@ -196,7 +196,7 @@
                 const y = distance * Math.sin(theta) * Math.sin(phi);
                 const z = distance * Math.cos(theta);
                 
-                star.setAttribute('position', ${x} ${y} ${z});
+                star.setAttribute('position', `${x} ${y} ${z}`);
                 star.setAttribute('radius', Math.random() * 0.1);
                 star.setAttribute('color', '#FFFFFF');
                 star.setAttribute('shader', 'flat');
@@ -211,7 +211,7 @@
         
         function createNode(x, y, z, title, isTag, id, connections) {
             const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', ${x} ${y} ${z});
+            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
             nodeEntity.setAttribute('data-id', id);
             
             // Calculate size based on connections (normalized)
@@ -227,7 +227,7 @@
             const hue = isTag ? 0 : 210;  // Red for tags, Blue for items
             const saturation = 70 + (connectionCount * 2);
             const brightness = 50 + (connectionCount * 3);
-            sphere.setAttribute('color', hsl(${hue}, ${saturation}%, ${brightness}%));
+            sphere.setAttribute('color', `hsl(${hue}, ${saturation}%, ${brightness}%)`);
             
             // Add emission for glow effect
             sphere.setAttribute('material', 'emissive: #444; emissiveIntensity: 0.5');
@@ -237,8 +237,8 @@
             // Add text label
             const text = document.createElement('a-text');
             text.setAttribute('value', title);
-            text.setAttribute('position', 0 ${baseSize * scaleFactor + 0.5} 0);
-            text.setAttribute('scale', ${0.5 * scaleFactor} ${0.5 * scaleFactor} ${0.5 * scaleFactor});
+            text.setAttribute('position', `0 ${baseSize * scaleFactor + 0.5} 0`);
+            text.setAttribute('scale', `${0.5 * scaleFactor} ${0.5 * scaleFactor} ${0.5 * scaleFactor}`);
             text.setAttribute('align', 'center');
             text.setAttribute('color', 'white');
             text.setAttribute('look-at', '[camera]');
@@ -297,8 +297,8 @@
                         const endPos = endNode.getAttribute('position');
                         const line = document.createElement('a-entity');
                         line.setAttribute('line', {
-                            start: ${startPos.x} ${startPos.y} ${startPos.z},
-                            end: ${endPos.x} ${endPos.y} ${endPos.z},
+                            start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                            end: `${endPos.x} ${endPos.y} ${endPos.z}`,
                             color: '#334455',
                             opacity: 0.2
                         });
@@ -320,7 +320,7 @@
             });
         }
 
-  // Modified force simulation for space-like behavior
+        // Modified force simulation for space-like behavior
         function createForceSimulation() {
             const nodes = [];
             const links = [];
@@ -350,14 +350,14 @@
                 });
             });
 
-          return d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).distance(5).strength(0.1))
-    .force("charge", d3.forceManyBody().strength(-10))
-    .force("center", d3.forceCenter(0, 0).strength(0.1))
-    .force("collide", d3.forceCollide(node => 0.5 + (node.connections || 1) * 0.2))
-    .velocityDecay(0.6)
-    .alphaMin(0.05)
-    .alphaDecay(0.005);
+            return d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).distance(8).strength(0.05))
+                .force("charge", d3.forceManyBody().strength(-30))
+                .force("center", d3.forceCenter(0, 0).strength(0.01))
+                .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.5))
+                .velocityDecay(0.3)
+                .alphaMin(0.001)
+                .alphaDecay(0.01);
         }
 
         // Initialize visualization
@@ -365,7 +365,6 @@
             createStarfield();
             createCircularLayout();
         });
-
 
         function togglePhysics() {
             if (simulation) {
@@ -378,7 +377,7 @@
                     simulation.nodes().forEach(node => {
                         const el = nodeElements.get(node.id);
                         if (el) {
-                            el.setAttribute('position', ${node.x} ${node.y} ${node.z});
+                            el.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
                         }
                     });
                     
@@ -390,8 +389,8 @@
                                 const startPos = start.getAttribute('position');
                                 const endPos = end.getAttribute('position');
                                 conn.element.setAttribute('line', {
-                                    start: ${startPos.x} ${startPos.y} ${startPos.z},
-                                    end: ${endPos.x} ${endPos.y} ${endPos.z},
+                                    start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                                    end: `${endPos.x} ${endPos.y} ${endPos.z}`,
                                     color: '#334455',
                                     opacity: 0.2
                                 });
