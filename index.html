@@ -42,10 +42,23 @@
      <!-- Camera with enhanced movement -->
 <a-entity position="0 0 20">
     <a-camera id="main-camera" 
-              wasd-controls="fly: true; acceleration: 65" 
-              look-controls="reverseMouseDrag: false; mouseEnabled: true; touchEnabled: true"
-              cursor="rayOrigin: mouse">
+              wasd-controls="fly: true; acceleration: 75; speed: 30; enabled: true;" 
+              look-controls="reverseMouseDrag: false; mouseEnabled: true; touchEnabled: true" 
+              cursor="rayOrigin: mouse" 
+              position="0 1.6 0" 
+              rotation="0 0 0">
         <a-cursor color="#4CC3D9"></a-cursor>
+
+        <!-- Add smooth camera transitions -->
+        <a-animation attribute="position" 
+                     to="0 1.6 0" 
+                     dur="500" 
+                     easing="easeInOutQuad"></a-animation>
+
+        <!-- Camera boundary (optional) -->
+        <a-box position="5 5 -5" width="10" height="10" depth="10" color="#CCC" opacity="0.2"></a-box>
+        <a-box position="-5 5 -5" width="10" height="10" depth="10" color="#CCC" opacity="0.2"></a-box>
+        <a-box position="0 5 -15" width="10" height="10" depth="10" color="#CCC" opacity="0.2"></a-box>
     </a-camera>
 </a-entity>
         
