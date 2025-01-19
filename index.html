@@ -286,7 +286,7 @@
             // Create inner circle of tags
             const uniqueTags = new Set(items.flatMap(item => item.tags));
             const tags = Array.from(uniqueTags);
-            const tagRadius = radius * 0.5;  // Inner circle for tags
+            const tagRadius = radius * 0.2;  // Inner circle for tags
             const tagAngleStep = (2 * Math.PI) / tags.length;
             
             tags.forEach((tag, index) => {
