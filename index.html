@@ -33,25 +33,49 @@
 <body>
     <div class="controls">
         <h2>Space Network Explorer</h2>
-        <p>WASD/Arrow keys to move</p>
-        <p>Mouse drag to look around</p>
-        <p>Space to brake</p>
+        <p>Left stick/touchpad: Move</p>
+        <p>Right stick/touchpad: Turn</p>
+        <p>Grip buttons: Up/Down</p>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
     </div>
     
     <a-scene>
-        <!-- Enhanced Environment -->
+        <!-- Environment -->
         <a-sky src="/api/placeholder/2048/2048" color="#000033"></a-sky>
         
-        <!-- Enhanced Camera with better movement -->
-        <a-entity position="0 0 20">
-            <a-camera id="main-camera" 
-                     look-controls="pointerLockEnabled: true"
-                     wasd-controls="acceleration: 20; fly: true">
-                <a-cursor color="#4CC3D9"></a-cursor>
-            </a-camera>
+        <!-- Camera rig for VR -->
+        <a-entity id="rig" movement-controls="fly: true; speed: 0.3;">
+            <a-entity id="camera"
+                      position="0 1.6 0"
+                      camera
+                      look-controls
+                      cursor="rayOrigin: mouse"
+                      raycaster="far: 100; objects: .node"
+            ></a-entity>
+            
+            <!-- Left Controller -->
+            <a-entity id="leftHand"
+                      hand-controls="hand: left"
+                      oculus-touch-controls="hand: left"
+                      vive-controls="hand: left"
+                      thumbstick-logging
+                      laser-controls="hand: left"
+                      raycaster="objects: .node; far: 100;"
+                      line="color: #FF6666"
+            ></a-entity>
+            
+            <!-- Right Controller -->
+            <a-entity id="rightHand"
+                      hand-controls="hand: right"
+                      oculus-touch-controls="hand: right"
+                      vive-controls="hand: right"
+                      thumbstick-logging
+                      laser-controls="hand: right"
+                      raycaster="objects: .node; far: 100;"
+                      line="color: #66FF66"
+            ></a-entity>
         </a-entity>
-        
+
         <!-- Enhanced Lighting -->
         <a-light type="ambient" color="#111"></a-light>
         <a-light type="point" position="0 0 0" intensity="0.8" color="#ffffff"></a-light>
@@ -64,6 +88,30 @@
     </a-scene>
 
     <script>
+        // Custom component for thumbstick logging
+        AFRAME.registerComponent('thumbstick-logging', {
+            init: function () {
+                this.el.addEventListener('thumbstickmoved', this.logThumbstick);
+            },
+            logThumbstick: function (evt) {
+                if (evt.detail.y > 0.95) { 
+                    // Move forward
+                    this.el.object3D.position.z -= 0.1;
+                }
+                if (evt.detail.y < -0.95) { 
+                    // Move backward
+                    this.el.object3D.position.z += 0.1;
+                }
+                if (evt.detail.x < -0.95) { 
+                    // Move left
+                    this.el.object3D.position.x -= 0.1;
+                }
+                if (evt.detail.x > 0.95) { 
+                    // Move right
+                    this.el.object3D.position.x += 0.1;
+                }
+            }
+        });
         // Full dataset from original
         const items = [
             { "id": 1, "title": "Summerhill Dawn", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/NgAvUmezuC8" },
@@ -164,10 +212,20 @@
         let nodeElements = new Map();
         let simulation;
 
-        function createNode(x, y, z, title, isTag = false, id) {
+     function createNode(x, y, z, title, isTag = false, id) {
             const nodeEntity = document.createElement('a-entity');
             nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
             nodeEntity.setAttribute('data-id', id);
+            nodeEntity.classList.add('node'); // Add class for raycaster
+
+            // Clickable behavior
+            nodeEntity.setAttribute('class', 'node interactive');
+            nodeEntity.addEventListener('click', function (evt) {
+                // Highlight node when clicked
+                const sphere = this.querySelector('a-sphere');
+                const currentColor = sphere.getAttribute('material').emissiveIntensity;
+                sphere.setAttribute('material', 'emissiveIntensity', currentColor === 0.3 ? 1.0 : 0.3);
+            });
 
             // Create glow effect
             const glow = document.createElement('a-sphere');
@@ -403,6 +461,56 @@
             console.log('Scene loaded, creating layout...');
             createStars();
             createCircularLayout();
+        });
+  <script>
+        AFRAME.registerComponent('movement-controls', {
+            schema: {
+                speed: {default: 0.3},
+                fly: {default: true}
+            },
+
+            init: function () {
+                this.velocity = new THREE.Vector3();
+                this.moveVector = new THREE.Vector3();
+                
+                // Setup handlers for controller events
+                this.setupControllers();
+            },
+
+            setupControllers: function () {
+                // Left controller for movement
+                const leftController = document.querySelector('#leftHand');
+                if (leftController) {
+                    leftController.addEventListener('axismove', (e) => {
+                        // Vertical movement with grip buttons
+                        if (e.detail.axis[1] < -0.5) {
+                            this.el.object3D.position.y += this.data.speed;
+                        } else if (e.detail.axis[1] > 0.5) {
+                            this.el.object3D.position.y -= this.data.speed;
+                        }
+                    });
+                }
+
+                // Right controller for rotation
+                const rightController = document.querySelector('#rightHand');
+                if (rightController) {
+                    rightController.addEventListener('axismove', (e) => {
+                        // Rotation
+                        if (Math.abs(e.detail.axis[0]) > 0.2) {
+                            this.el.object3D.rotation.y -= e.detail.axis[0] * 0.05;
+                        }
+                    });
+                }
+            },
+
+            tick: function () {
+                const cameraRig = this.el;
+                const rotation = cameraRig.getAttribute('rotation');
+                
+                // Apply movement based on controller input
+                this.velocity.multiplyScalar(0.85); // Add some drag
+                cameraRig.object3D.position.add(this.velocity);
+            }
         });
     </script>
 </body>
