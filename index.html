@@ -321,49 +321,68 @@
         }
 
     // Modified force simulation for space-like behavior
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
-            const nodeConnections = calculateNodeSizes();
+function createForceSimulation() {
+    const nodes = [];
+    const links = [];
+    const nodeConnections = calculateNodeSizes();
 
-            // Use current positions as starting points for simulation
-            nodeElements.forEach((element, id) => {
-                const pos = element.getAttribute('position');
-                const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
-                nodes.push({
-                    id: id,
-                    title: element.querySelector('a-text').getAttribute('value'),
-                    isTag: isTag,
-                    x: pos.x,
-                    y: pos.y,
-                    z: pos.z,
-                    connections: nodeConnections.get(id)
-                });
-            });
-
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
-            });
-
-          return d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).distance(5).strength(0.1))
-    .force("charge", d3.forceManyBody().strength(-10))
-    .force("center", d3.forceCenter(0, 0).strength(0.1))
-    .force("collide", d3.forceCollide(node => 0.5 + (node.connections || 1) * 0.2))
-    .velocityDecay(0.6)
-    .alphaMin(0.05)
-    .alphaDecay(0.005);   }
-        
-        // Initialize visualization
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            createStarfield();
-            createCircularLayout();
+    // Use current positions as starting points for simulation
+    nodeElements.forEach((element, id) => {
+        const pos = element.getAttribute('position');
+        const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
+        nodes.push({
+            id: id,
+            title: element.querySelector('a-text').getAttribute('value'),
+            isTag: isTag,
+            x: pos.x,
+            y: pos.y,
+            z: pos.z || Math.random() * 20 - 10, // Use pos.z or randomize if undefined
+            connections: nodeConnections.get(id)
         });
+    });
+
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
+            });
+        });
+    });
+
+    // Define the force simulation with 3D forces
+    return d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).distance(8).strength(0.05))
+        .force("charge", d3.forceManyBody().strength(-30))
+        .force("center", d3.forceCenter(0, 0).strength(0.1))
+        .force("zCenter", d3.forceZ(0).strength(0.1)) // Center force for z-axis
+        .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.5))
+        .velocityDecay(0.6) // Higher decay for stabilization
+        .alphaMin(0.05) // Prevent alpha from decaying too quickly
+        .alphaDecay(0.005); // Slower alpha decay
+}
+
+// Initialize visualization
+document.querySelector('a-scene').addEventListener('loaded', function () {
+    createStarfield(); // Optional background effect
+    createCircularLayout(); // Initial circular layout
+    const simulation = createForceSimulation();
+
+    // Update node positions dynamically
+    simulation.on("tick", () => {
+        nodeElements.forEach((element, id) => {
+            const node = simulation.nodes()[id];
+            if (node) {
+                element.setAttribute('position', {
+                    x: node.x,
+                    y: node.y,
+                    z: node.z
+                });
+            }
+        });
+    });
+});
+
 
         function togglePhysics() {
             if (simulation) {
