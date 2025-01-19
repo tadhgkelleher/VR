@@ -229,7 +229,7 @@
             // Calculate size based on connections (normalized)
             const baseSize = isTag ? 0.4 : 0.6;
             const connectionCount = connections.get(id) || 1;
-            const scaleFactor = 0.1 + (connectionCount * 0.2);
+            const scaleFactor = 0.1 + (connectionCount * 0.1);
             
             // Create the sphere with glow
             const sphere = document.createElement('a-sphere');
@@ -269,7 +269,7 @@
             const nodeConnections = calculateNodeSizes();
             
             // Create outer circle of items
-            const radius = 5;  // Larger radius for space-like feel
+            const radius = 2;  // Larger radius for space-like feel
             const itemAngleStep = (2 * Math.PI) / items.length;
             
             items.forEach((item, index) => {
