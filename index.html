@@ -357,7 +357,8 @@
     .force("collide", d3.forceCollide(node => 0.5 + (node.connections || 1) * 0.2))
     .velocityDecay(0.6)
     .alphaMin(0.05)
-    .alphaDecay(0.005);
+    .alphaDecay(0.005);   }
+        
         // Initialize visualization
         document.querySelector('a-scene').addEventListener('loaded', function () {
             createStarfield();
