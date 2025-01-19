@@ -321,44 +321,65 @@
         }
 
        // Modified force simulation for space-like behavior
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
-            const nodeConnections = calculateNodeSizes();
+      function createForceSimulation() {
+    const nodes = [];
+    const links = [];
+    const nodeConnections = calculateNodeSizes();
 
-            // Use current positions as starting points for simulation
-            nodeElements.forEach((element, id) => {
-                const pos = element.getAttribute('position');
-                const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
-                nodes.push({
-                    id: id,
-                    title: element.querySelector('a-text').getAttribute('value'),
-                    isTag: isTag,
-                    x: pos.x,
-                    y: pos.y,
-                    z: pos.z,
-                    connections: nodeConnections.get(id)
-                });
+    // Use current positions as starting points for simulation
+    nodeElements.forEach((element, id) => {
+        const pos = element.getAttribute('position');
+        const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
+        nodes.push({
+            id: id,
+            title: element.querySelector('a-text').getAttribute('value'),
+            isTag: isTag,
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+            connections: nodeConnections.get(id)
+        });
+    });
+
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
             });
+        });
+    });
 
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
+    // Modified force parameters for gentler movement
+    return d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links)
+            .distance(5)        // Reduced from 8
+            .strength(0.02))    // Reduced from 0.05
+        .force("charge", d3.forceManyBody()
+            .strength(-10)      // Reduced from -30
+            .distanceMax(20))   // Added maximum distance for force effect
+        .force("center", d3.forceCenter(0, 0)
+            .strength(0.05))    // Increased from 0.01 to keep nodes more centered
+        .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.3))
+        // Add a containment force to keep nodes within bounds
+        .force("bounds", () => {
+            const bound = 20;
+            nodes.forEach(node => {
+                if (Math.abs(node.x) > bound) node.x *= 0.9;
+                if (Math.abs(node.y) > bound) node.y *= 0.9;
+                if (Math.abs(node.z) > bound) node.z *= 0.9;
             });
+        })
+        .velocityDecay(0.4)    // Increased from 0.3 for more damping
+        .alphaMin(0.001)
+        .alphaDecay(0.02);     // Increased for quicker settling
+}
+          // Initialize visualization
+        document.querySelector('a-scene').addEventListener('loaded', function () {
+            createStarfield();
+            createCircularLayout();
+        });
 
-            return d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).distance(8).strength(0.05))
-                .force("charge", d3.forceManyBody().strength(-30))
-                .force("center", d3.forceCenter(0, 0).strength(0.01))
-                .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.5))
-                .velocityDecay(0.3)
-                .alphaMin(0.001)
-                .alphaDecay(0.01);
-        }
         function togglePhysics() {
             if (simulation) {
                 simulation.stop();
