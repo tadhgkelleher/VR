@@ -1,10 +1,85 @@
 <!DOCTYPE html>
 <html>
-<!-- [Previous head and style sections remain the same] -->
 <head>
-    <title>VR Connections Graph</title>
+    <title>Space Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    
+    <!-- Add custom VR movement component -->
+    <script>
+        AFRAME.registerComponent('vr-movement', {
+            schema: {
+                speed: { type: 'number', default: 0.1 }
+            },
+            init: function() {
+                this.moveVector = new THREE.Vector3();
+                this.bindMethods();
+                this.setupControls();
+            },
+            bindMethods: function() {
+                this.onTriggerDown = this.onTriggerDown.bind(this);
+                this.onTriggerUp = this.onTriggerUp.bind(this);
+                this.onThumbstickMove = this.onThumbstickMove.bind(this);
+                this.onGripDown = this.onGripDown.bind(this);
+                this.onGripUp = this.onGripUp.bind(this);
+            },
+            setupControls: function() {
+                this.el.addEventListener('triggerstartright', this.onTriggerDown);
+                this.el.addEventListener('triggerendright', this.onTriggerUp);
+                this.el.addEventListener('thumbstickmoved', this.onThumbstickMove);
+                this.el.addEventListener('gripdown', this.onGripDown);
+                this.el.addEventListener('gripup', this.onGripUp);
+            },
+            onTriggerDown: function(evt) {
+                this.isTriggerDown = true;
+            },
+            onTriggerUp: function(evt) {
+                this.isTriggerDown = false;
+            },
+            onThumbstickMove: function(evt) {
+                const { x, y } = evt.detail;
+                this.moveVector.x = x * this.data.speed;
+                this.moveVector.z = y * this.data.speed;
+            },
+            onGripDown: function(evt) {
+                this.isGripDown = true;
+            },
+            onGripUp: function(evt) {
+                this.isGripDown = false;
+            },
+            tick: function() {
+                if (this.moveVector.length() > 0) {
+                    const rotation = this.el.object3D.rotation;
+                    const moveVectorRotated = this.moveVector.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation.y);
+                    this.el.object3D.position.add(moveVectorRotated);
+                }
+                if (this.isGripDown) {
+                    this.el.object3D.position.y += this.data.speed;
+                }
+            }
+        });
+
+        // Node interaction component
+        AFRAME.registerComponent('node-interaction', {
+            init: function() {
+                this.el.addEventListener('raycaster-intersected', () => {
+                    this.el.setAttribute('scale', '1.2 1.2 1.2');
+                });
+                this.el.addEventListener('raycaster-intersected-cleared', () => {
+                    this.el.setAttribute('scale', '1 1 1');
+                });
+                this.el.addEventListener('click', () => {
+                    this.handleClick();
+                });
+            },
+            handleClick: function() {
+                const sphere = this.el.querySelector('a-sphere');
+                const currentEmissive = sphere.getAttribute('material').emissiveIntensity;
+                sphere.setAttribute('material', 'emissiveIntensity', currentEmissive === 0.3 ? 1.0 : 0.3);
+            }
+        });
+    </script>
+
     <style>
         .controls {
             position: fixed;
@@ -33,55 +108,51 @@
 </head>
 <body>
     <div class="controls">
-        <h2>VR Connections Graph</h2>
-        <p>Use VR headset or mouse to explore</p>
+        <h2>Space Network Explorer</h2>
+        <p>VR Controls:</p>
+        <ul>
+            <li>Thumbstick: Move</li>
+            <li>Grip: Float Up</li>
+            <li>Trigger: Select</li>
+        </ul>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
     </div>
     
     <a-scene>
-        <!-- Environment -->
-        <a-sky color="#1a1a1a"></a-sky>
-        <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
-        
-        <!-- Camera -->
-        <a-entity position="0 1.6 8">
-            <a-camera id="main-camera" look-controls wasd-controls>
-                <a-cursor color="#4CC3D9"></a-cursor>
-            </a-camera>
-        </a-entity>
-        
-        <!-- Lighting -->
-        <a-light type="ambient" color="#BBB"></a-light>
-        <a-light type="directional" position="0 1 1" intensity="0.6"></a-light>
+        <!-- Assets -->
+        <a-assets>
+            <img id="space" src="/api/placeholder/4096/2048" />
+        </a-assets>
 
-        <!-- Nodes container -->
+        <!-- Environment -->
+        <a-sky color="#000033"></a-sky>
+        
+        <!-- Camera Rig -->
+        <a-entity id="cameraRig" position="0 1.6 5" vr-movement="speed: 0.15">
+            <a-camera look-controls wasd-controls="fly: true; acceleration: 20;">
+                <a-cursor raycaster="objects: .node" color="#4CC3D9"></a-cursor>
+            </a-camera>
+            
+            <!-- Controllers -->
+            <a-entity id="leftHand"
+                      laser-controls="hand: left"
+                      raycaster="objects: .node; lineColor: #FF6666"
+                      line="color: #FF6666; opacity: 0.5"></a-entity>
+            <a-entity id="rightHand"
+                      laser-controls="hand: right"
+                      raycaster="objects: .node; lineColor: #66FF66"
+                      line="color: #66FF66; opacity: 0.5"></a-entity>
+        </a-entity>
+
+        <!-- Lighting -->
+        <a-light type="ambient" color="#111"></a-light>
+        <a-light type="point" position="0 0 0" intensity="0.8" color="#ffffff"></a-light>
+
+        <!-- Containers -->
+        <a-entity id="stars"></a-entity>
         <a-entity id="nodes"></a-entity>
     </a-scene>
-   <script>
-        // [Previous camera zoom controls remain the same]
-        const camera = document.querySelector('#main-camera');
-        const cameraEl = camera.getObject3D('camera');
 
-        function adjustZoom(delta) {
-            if (cameraEl) {
-                const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta));
-                cameraEl.fov = newFOV;
-                cameraEl.updateProjectionMatrix();
-            }
-        }
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === '+' || event.key === '=') {
-                adjustZoom(-5);
-            } else if (event.key === '-' || event.key === '_') {
-                adjustZoom(5);
-            }
-        });
-
-        document.addEventListener('wheel', (event) => {
-            adjustZoom(event.deltaY > 0 ? 5 : -5);
-        });
-    </script>
     <script>
         // Full dataset from original
         const items = [
