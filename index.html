@@ -190,7 +190,7 @@
             items.forEach(item => {
                 connections.set(item.id, item.tags.length);
                 item.tags.forEach(tag => {
-                    connections.set(tag, (connections.get(tag) || 0) + 1);
+                    connections.set(tag, (connections.get(tag) || 0) + .5);
                 });
             });
             return connections;
