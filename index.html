@@ -184,13 +184,13 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-      // Calculate node sizes based on connections
+         // Calculate node sizes based on connections
         function calculateNodeSizes() {
             const connections = new Map();
             items.forEach(item => {
                 connections.set(item.id, item.tags.length);
                 item.tags.forEach(tag => {
-                    connections.set(tag, (connections.get(tag) || 0) + .5);
+                    connections.set(tag, (connections.get(tag) || 0) + 1);
                 });
             });
             return connections;
@@ -229,7 +229,7 @@
             // Calculate size based on connections (normalized)
             const baseSize = isTag ? 0.4 : 0.6;
             const connectionCount = connections.get(id) || 1;
-            const scaleFactor = 0.1 + (connectionCount * 0.1);
+            const scaleFactor = 0.2 + (connectionCount * 0.15);
             
             // Create the sphere with glow
             const sphere = document.createElement('a-sphere');
@@ -260,42 +260,78 @@
             return nodeEntity;
         }
 
-        function createCircularLayout() {
-            const container = document.querySelector('#nodes');
-            container.innerHTML = '';
-            connections = [];
-            nodeElements.clear();
-            
+        function toggleConnectionLines() {
+            showConnections = !showConnections;
+            connections.forEach(conn => {
+                conn.element.setAttribute('visible', showConnections);
+            });
+        }
+
+        // Modified force simulation for space-like behavior
+        function createForceSimulation() {
+            const nodes = [];
+            const links = [];
             const nodeConnections = calculateNodeSizes();
-            
-            // Create outer circle of items
-            const radius = 2;  // Larger radius for space-like feel
-            const itemAngleStep = (2 * Math.PI) / items.length;
-            
-            items.forEach((item, index) => {
-                const angle = itemAngleStep * index;
-                // Add slight random variation to z for more 3D feel
-                const x = radius * Math.cos(angle);
-                const y = radius * Math.sin(angle);
-                const z = (Math.random() - 0.5) * 5;  // Random depth variation
-                
-                const node = createNode(x, y, z, item.title, false, item.id, nodeConnections);
-                container.appendChild(node);
+
+            items.forEach(item => {
+                nodes.push({
+                    id: item.id,
+                    title: item.title,
+                    isTag: false,
+                    x: Math.random() * 40 - 20,
+                    y: Math.random() * 40 - 20,
+                    z: Math.random() * 40 - 20,
+                    connections: nodeConnections.get(item.id)
+                });
             });
 
-            // Create inner circle of tags
             const uniqueTags = new Set(items.flatMap(item => item.tags));
-            const tags = Array.from(uniqueTags);
-            const tagRadius = radius * 0.2;  // Inner circle for tags
-            const tagAngleStep = (2 * Math.PI) / tags.length;
+            Array.from(uniqueTags).forEach(tag => {
+                nodes.push({
+                    id: tag,
+                    title: tag,
+                    isTag: true,
+                    x: Math.random() * 40 - 20,
+                    y: Math.random() * 40 - 20,
+                    z: Math.random() * 40 - 20,
+                    connections: nodeConnections.get(tag)
+                });
+            });
+
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    links.push({
+                        source: nodes.find(n => n.id === item.id),
+                        target: nodes.find(n => n.id === tag)
+                    });
+                });
+            });
+
+            return d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).distance(8).strength(0.05))
+                .force("charge", d3.forceManyBody().strength(-30))
+                .force("center", d3.forceCenter(0, 0).strength(0.01))
+                .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.5))
+                .velocityDecay(0.3)
+                .alphaMin(0.001)
+                .alphaDecay(0.01);
+        }
+
+        // Initialize visualization
+        document.querySelector('a-scene').addEventListener('loaded', function () {
+            createStarfield();
+            const nodeConnections = calculateNodeSizes();
+            const container = document.querySelector('#nodes');
             
-            tags.forEach((tag, index) => {
-                const angle = tagAngleStep * index;
-                const x = tagRadius * Math.cos(angle);
-                const y = tagRadius * Math.sin(angle);
-                const z = (Math.random() - 0.5) * 3;  // Smaller depth variation for tags
+            // Create initial layout
+            items.forEach((item, index) => {
+                const angle = (index / items.length) * Math.PI * 2;
+                const radius = 10;
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                const z = (Math.random() - 0.5) * 10;
                 
-                const node = createNode(x, y, z, tag, true, tag, nodeConnections);
+                const node = createNode(x, y, z, item.title, false, item.id, nodeConnections);
                 container.appendChild(node);
             });
 
@@ -309,8 +345,8 @@
                         const endPos = endNode.getAttribute('position');
                         const line = document.createElement('a-entity');
                         line.setAttribute('line', {
-                            start: `${startPos.x} ${startPos.y} ${startPos.z}`,
-                            end: `${endPos.x} ${endPos.y} ${endPos.z}`,
+                            start: startPos,
+                            end: endPos,
                             color: '#334455',
                             opacity: 0.2
                         });
@@ -323,64 +359,15 @@
                     }
                 });
             });
-        }
 
-        function toggleConnectionLines() {
-            showConnections = !showConnections;
-            connections.forEach(conn => {
-                conn.element.setAttribute('visible', showConnections);
-            });
-        }
-
-       function createForceSimulation() {
-    const nodes = [];
-    const links = [];
-    const nodeConnections = calculateNodeSizes();
-
-    // Use current positions as starting points for simulation
-    nodeElements.forEach((element, id) => {
-        const pos = element.getAttribute('position');
-        const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
-        nodes.push({
-            id: id,
-            title: element.querySelector('a-text').getAttribute('value'),
-            isTag: isTag,
-            x: pos.x,
-            y: pos.y,
-            z: pos.z,
-            connections: nodeConnections.get(id)
-        });
-    });
-
-    items.forEach(item => {
-        item.tags.forEach(tag => {
-            links.push({
-                source: nodes.find(n => n.id === item.id),
-                target: nodes.find(n => n.id === tag)
-            });
-        });
-    });
-
-    return d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).distance(10).strength(0.1)) // Increase link distance
-        .force("charge", d3.forceManyBody().strength(-10)) // Make nodes repel each other more
-        .force("center", d3.forceCenter(0, 0).strength(2)) // Adjust center force
-        .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.8)) // Increase collision strength
-        .velocityDecay(0.3)
-        .alphaMin(0.001)
-        .alphaDecay(0.01);
-}
-        // Initialize visualization
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            createStarfield();
-            createCircularLayout();
+            // Start physics simulation
+            togglePhysics();
         });
 
         function togglePhysics() {
             if (simulation) {
                 simulation.stop();
                 simulation = null;
-                createCircularLayout();  // Reset to circular layout when physics is disabled
             } else {
                 simulation = createForceSimulation();
                 simulation.on('tick', () => {
@@ -411,6 +398,5 @@
             }
         }
     </script>
-
 </body>
 </html>
