@@ -170,6 +170,80 @@
   { "id": 84, "title": "Pete Wingfield", "tags": ["Producer", "Paul McCartney", "Everly Bros", "Van Morrison"] },
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
+  function calculateNodeSizes() {
+            const connections = new Map();
+            items.forEach(item => {
+                connections.set(item.id, item.tags.length);
+                item.tags.forEach(tag => {
+                    connections.set(tag, (connections.get(tag) || 0) + 1);
+                });
+            });
+            return connections;
+        }
+
+        function createStarfield() {
+            const stars = document.querySelector('#stars');
+            for (let i = 0; i < 1000; i++) {
+                const star = document.createElement('a-sphere');
+                const distance = Math.random() * 100 + 50;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI * 2;
+                
+                const x = distance * Math.sin(theta) * Math.cos(phi);
+                const y = distance * Math.sin(theta) * Math.sin(phi);
+                const z = distance * Math.cos(theta);
+                
+                star.setAttribute('position', `${x} ${y} ${z}`);
+                star.setAttribute('radius', Math.random() * 0.1);
+                star.setAttribute('color', '#FFFFFF');
+                star.setAttribute('shader', 'flat');
+                stars.appendChild(star);
+            }
+        }
+
+        let connections = [];
+        let nodeElements = new Map();
+        let simulation;
+        let showConnections = true;
+        
+        function createNode(x, y, z, title, isTag, id, connections) {
+            const nodeEntity = document.createElement('a-entity');
+            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+            nodeEntity.setAttribute('data-id', id);
+            
+            // Calculate size based on connections (normalized)
+            const baseSize = isTag ? 0.4 : 0.6;
+            const connectionCount = connections.get(id) || 1;
+            const scaleFactor = 0.2 + (connectionCount * 0.15);
+            
+            // Create the sphere with glow
+            const sphere = document.createElement('a-sphere');
+            sphere.setAttribute('radius', baseSize * scaleFactor);
+            
+            // Color based on type and connections
+            const hue = isTag ? 0 : 210;  // Red for tags, Blue for items
+            const saturation = 70 + (connectionCount * 2);
+            const brightness = 50 + (connectionCount * 3);
+            sphere.setAttribute('color', `hsl(${hue}, ${saturation}%, ${brightness}%)`);
+            
+            // Add emission for glow effect
+            sphere.setAttribute('material', 'emissive: #444; emissiveIntensity: 0.5');
+            
+            nodeEntity.appendChild(sphere);
+            
+            // Add text label
+            const text = document.createElement('a-text');
+            text.setAttribute('value', title);
+            text.setAttribute('position', `0 ${baseSize * scaleFactor + 0.5} 0`);
+            text.setAttribute('scale', `${0.5 * scaleFactor} ${0.5 * scaleFactor} ${0.5 * scaleFactor}`);
+            text.setAttribute('align', 'center');
+            text.setAttribute('color', 'white');
+            text.setAttribute('look-at', '[camera]');
+            nodeEntity.appendChild(text);
+            
+            nodeElements.set(id, nodeEntity);
+            return nodeEntity;
+        }
 
            const uniqueTags = new Set();
         items.forEach(item => {
