@@ -39,12 +39,15 @@
         <!-- Environment -->
         <a-sky color="#000033"></a-sky>
         
-        <!-- Camera with enhanced movement -->
-        <a-entity position="0 0 20">
-            <a-camera id="main-camera" wasd-controls="fly: true; acceleration: 65" look-controls>
-                <a-cursor color="#4CC3D9"></a-cursor>
-            </a-camera>
-        </a-entity>
+     <!-- Camera with enhanced movement -->
+<a-entity position="0 0 20">
+    <a-camera id="main-camera" 
+              wasd-controls="fly: true; acceleration: 65" 
+              look-controls="reverseMouseDrag: false; mouseEnabled: true; touchEnabled: true"
+              cursor="rayOrigin: mouse">
+        <a-cursor color="#4CC3D9"></a-cursor>
+    </a-camera>
+</a-entity>
         
         <!-- Ambient space lighting -->
         <a-light type="ambient" color="#222255" intensity="0.5"></a-light>
