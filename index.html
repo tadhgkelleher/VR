@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
-<!-- [Previous head and style sections remain the same] -->
 <head>
-    <title>VR Connections Graph</title>
+    <title>Network Space Visualization</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
@@ -24,36 +23,36 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: transform 0.3s;
-        }
-        .toggle-button:hover {
-            transform: scale(1.05);
+            margin: 5px;
         }
     </style>
 </head>
 <body>
     <div class="controls">
-        <h2>VR Connections Graph</h2>
-        <p>Use VR headset or mouse to explore</p>
+        <h2>Network Space Explorer</h2>
+        <p>WASD/Arrows: Move | Mouse: Look | Space: Up | C: Down</p>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
+        <button class="toggle-button" onclick="toggleConnectionLines()">Toggle Connections</button>
     </div>
     
     <a-scene>
         <!-- Environment -->
-        <a-sky color="#1a1a1a"></a-sky>
-        <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
+        <a-sky color="#000033"></a-sky>
         
-        <!-- Camera -->
-        <a-entity position="0 1.6 8">
-            <a-camera id="main-camera" look-controls wasd-controls>
+        <!-- Camera with enhanced movement -->
+        <a-entity position="0 0 20">
+            <a-camera id="main-camera" wasd-controls="fly: true; acceleration: 65" look-controls>
                 <a-cursor color="#4CC3D9"></a-cursor>
             </a-camera>
         </a-entity>
         
-        <!-- Lighting -->
-        <a-light type="ambient" color="#BBB"></a-light>
-        <a-light type="directional" position="0 1 1" intensity="0.6"></a-light>
-
+        <!-- Ambient space lighting -->
+        <a-light type="ambient" color="#222255" intensity="0.5"></a-light>
+        <a-light type="directional" position="-1 1 1" intensity="0.8" color="#FFFFFF"></a-light>
+        
+        <!-- Stars background -->
+        <a-entity id="stars"></a-entity>
+        
         <!-- Nodes container -->
         <a-entity id="nodes"></a-entity>
     </a-scene>
