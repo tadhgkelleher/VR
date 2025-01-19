@@ -320,87 +320,141 @@
             });
         }
 
-  // Modified force simulation for space-like behavior
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
-            const nodeConnections = calculateNodeSizes();
+  function createForceSimulation() {
+    const nodes = [];
+    const links = [];
+    const nodeConnections = calculateNodeSizes();
 
-            // Use current positions as starting points for simulation
-            nodeElements.forEach((element, id) => {
-                const pos = element.getAttribute('position');
-                const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
-                nodes.push({
-                    id: id,
-                    title: element.querySelector('a-text').getAttribute('value'),
-                    isTag: isTag,
-                    x: pos.x,
-                    y: pos.y,
-                    z: pos.z,
-                    connections: nodeConnections.get(id)
-                });
-            });
-
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
-            });
-
-          return d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).distance(5).strength(0.1))
-    .force("charge", d3.forceManyBody().strength(-10))
-    .force("center", d3.forceCenter(0, 0).strength(0.1))
-    .force("collide", d3.forceCollide(node => 0.5 + (node.connections || 1) * 0.2))
-    .velocityDecay(0.6)
-    .alphaMin(0.05)
-    .alphaDecay(0.005);
-        }
-
-        // Initialize visualization
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            createStarfield();
-            createCircularLayout();
+    // Use current positions as starting points for simulation
+    nodeElements.forEach((element, id) => {
+        const pos = element.getAttribute('position');
+        const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
+        nodes.push({
+            id: id,
+            title: element.querySelector('a-text').getAttribute('value'),
+            isTag: isTag,
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+            connections: nodeConnections.get(id)
         });
+    });
 
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
+            });
+        });
+    });
 
-        function togglePhysics() {
-            if (simulation) {
-                simulation.stop();
-                simulation = null;
-                createCircularLayout();  // Reset to circular layout when physics is disabled
-            } else {
-                simulation = createForceSimulation();
-                simulation.on('tick', () => {
-                    simulation.nodes().forEach(node => {
-                        const el = nodeElements.get(node.id);
-                        if (el) {
-                            el.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
-                        }
-                    });
-                    
-                    if (showConnections) {
-                        connections.forEach(conn => {
-                            const start = nodeElements.get(conn.startId);
-                            const end = nodeElements.get(conn.endId);
-                            if (start && end) {
-                                const startPos = start.getAttribute('position');
-                                const endPos = end.getAttribute('position');
-                                conn.element.setAttribute('line', {
-                                    start: `${startPos.x} ${startPos.y} ${startPos.z}`,
-                                    end: `${endPos.x} ${endPos.y} ${endPos.z}`,
-                                    color: '#334455',
-                                    opacity: 0.2
-                                });
-                            }
+    return d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).distance(30).strength(0.1))  // Increase link distance
+        .force("charge", d3.forceManyBody().strength(-15))  // Reduce repulsion to prevent nodes from drifting too far
+        .force("center", d3.forceCenter(0, 0).strength(0.1))  // Keep nodes near the center
+        .force("collide", d3.forceCollide(node => 0.5 + (node.connections || 1) * 0.2)) // Adjust collision distance
+        .velocityDecay(0.6)
+        .alphaMin(0.05)
+        .alphaDecay(0.005);
+}
+
+// Modify the creation of nodes to introduce more variation in Z-axis
+function createNode(x, y, z, title, isTag, id, connections) {
+    const nodeEntity = document.createElement('a-entity');
+    nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+    nodeEntity.setAttribute('data-id', id);
+
+    // Calculate size based on connections (normalized)
+    const baseSize = isTag ? 0.4 : 0.6;
+    const connectionCount = connections.get(id) || 1;
+    const scaleFactor = 0.2 + (connectionCount * 0.15);
+
+    // Create the sphere with glow
+    const sphere = document.createElement('a-sphere');
+    sphere.setAttribute('radius', baseSize * scaleFactor);
+
+    // Color based on type and connections
+    const hue = isTag ? 0 : 210;  // Red for tags, Blue for items
+    const saturation = 70 + (connectionCount * 2);
+    const brightness = 50 + (connectionCount * 3);
+    sphere.setAttribute('color', `hsl(${hue}, ${saturation}%, ${brightness}%)`);
+
+    // Add emission for glow effect
+    sphere.setAttribute('material', 'emissive: #444; emissiveIntensity: 0.5');
+
+    nodeEntity.appendChild(sphere);
+
+    // Add text label
+    const text = document.createElement('a-text');
+    text.setAttribute('value', title);
+    text.setAttribute('position', `0 ${baseSize * scaleFactor + 0.5} 0`);
+    text.setAttribute('scale', `${0.5 * scaleFactor} ${0.5 * scaleFactor} ${0.5 * scaleFactor}`);
+    text.setAttribute('align', 'center');
+    text.setAttribute('color', 'white');
+    text.setAttribute('look-at', '[camera]');
+    nodeEntity.appendChild(text);
+
+    nodeElements.set(id, nodeEntity);
+    return nodeEntity;
+}
+
+// Modify the camera to keep the nodes in view
+function updateCameraPosition() {
+    const maxDistance = 30;  // Adjust this based on the size of your scene
+    const camera = document.querySelector('[camera]');
+    const maxPosition = Math.max(Math.abs(camera.getAttribute('position').x), 
+                                Math.abs(camera.getAttribute('position').y),
+                                Math.abs(camera.getAttribute('position').z));
+    if (maxPosition < maxDistance) {
+        camera.setAttribute('position', `0 0 ${maxDistance}`);
+    }
+}
+
+// Initialize visualization
+document.querySelector('a-scene').addEventListener('loaded', function () {
+    createStarfield();
+    createCircularLayout();
+    updateCameraPosition(); // Ensure camera is positioned correctly at the start
+});
+
+function togglePhysics() {
+    if (simulation) {
+        simulation.stop();
+        simulation = null;
+        createCircularLayout();  // Reset to circular layout when physics is disabled
+        updateCameraPosition(); // Ensure the camera is adjusted
+    } else {
+        simulation = createForceSimulation();
+        simulation.on('tick', () => {
+            simulation.nodes().forEach(node => {
+                const el = nodeElements.get(node.id);
+                if (el) {
+                    el.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
+                }
+            });
+            
+            if (showConnections) {
+                connections.forEach(conn => {
+                    const start = nodeElements.get(conn.startId);
+                    const end = nodeElements.get(conn.endId);
+                    if (start && end) {
+                        const startPos = start.getAttribute('position');
+                        const endPos = end.getAttribute('position');
+                        conn.element.setAttribute('line', {
+                            start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                            end: `${endPos.x} ${endPos.y} ${endPos.z}`,
+                            color: '#334455',
+                            opacity: 0.2
                         });
                     }
                 });
             }
-        }
+            updateCameraPosition(); // Keep the camera adjusted during simulation
+        });
+    }
+}
+
     </script>
 </body>
 </html>
