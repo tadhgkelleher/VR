@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
+<!-- [Previous head and style sections remain the same] -->
 <head>
-    <title>Space Connections Graph</title>
+    <title>VR Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
@@ -32,86 +33,56 @@
 </head>
 <body>
     <div class="controls">
-        <h2>Space Network Explorer</h2>
-        <p>Left stick/touchpad: Move</p>
-        <p>Right stick/touchpad: Turn</p>
-        <p>Grip buttons: Up/Down</p>
+        <h2>VR Connections Graph</h2>
+        <p>Use VR headset or mouse to explore</p>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
     </div>
     
     <a-scene>
         <!-- Environment -->
-        <a-sky src="/api/placeholder/2048/2048" color="#000033"></a-sky>
+        <a-sky color="#1a1a1a"></a-sky>
+        <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
         
-        <!-- Camera rig for VR -->
-        <a-entity id="rig" movement-controls="fly: true; speed: 0.3;">
-            <a-entity id="camera"
-                      position="0 1.6 0"
-                      camera
-                      look-controls
-                      cursor="rayOrigin: mouse"
-                      raycaster="far: 100; objects: .node"
-            ></a-entity>
-            
-            <!-- Left Controller -->
-            <a-entity id="leftHand"
-                      hand-controls="hand: left"
-                      oculus-touch-controls="hand: left"
-                      vive-controls="hand: left"
-                      thumbstick-logging
-                      laser-controls="hand: left"
-                      raycaster="objects: .node; far: 100;"
-                      line="color: #FF6666"
-            ></a-entity>
-            
-            <!-- Right Controller -->
-            <a-entity id="rightHand"
-                      hand-controls="hand: right"
-                      oculus-touch-controls="hand: right"
-                      vive-controls="hand: right"
-                      thumbstick-logging
-                      laser-controls="hand: right"
-                      raycaster="objects: .node; far: 100;"
-                      line="color: #66FF66"
-            ></a-entity>
+        <!-- Camera -->
+        <a-entity position="0 1.6 8">
+            <a-camera id="main-camera" look-controls wasd-controls>
+                <a-cursor color="#4CC3D9"></a-cursor>
+            </a-camera>
         </a-entity>
-
-        <!-- Enhanced Lighting -->
-        <a-light type="ambient" color="#111"></a-light>
-        <a-light type="point" position="0 0 0" intensity="0.8" color="#ffffff"></a-light>
-
-        <!-- Star particles -->
-        <a-entity id="stars"></a-entity>
         
+        <!-- Lighting -->
+        <a-light type="ambient" color="#BBB"></a-light>
+        <a-light type="directional" position="0 1 1" intensity="0.6"></a-light>
+
         <!-- Nodes container -->
         <a-entity id="nodes"></a-entity>
     </a-scene>
+   <script>
+        // [Previous camera zoom controls remain the same]
+        const camera = document.querySelector('#main-camera');
+        const cameraEl = camera.getObject3D('camera');
 
-    <script>
-        // Custom component for thumbstick logging
-        AFRAME.registerComponent('thumbstick-logging', {
-            init: function () {
-                this.el.addEventListener('thumbstickmoved', this.logThumbstick);
-            },
-            logThumbstick: function (evt) {
-                if (evt.detail.y > 0.95) { 
-                    // Move forward
-                    this.el.object3D.position.z -= 0.1;
-                }
-                if (evt.detail.y < -0.95) { 
-                    // Move backward
-                    this.el.object3D.position.z += 0.1;
-                }
-                if (evt.detail.x < -0.95) { 
-                    // Move left
-                    this.el.object3D.position.x -= 0.1;
-                }
-                if (evt.detail.x > 0.95) { 
-                    // Move right
-                    this.el.object3D.position.x += 0.1;
-                }
+        function adjustZoom(delta) {
+            if (cameraEl) {
+                const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta));
+                cameraEl.fov = newFOV;
+                cameraEl.updateProjectionMatrix();
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === '+' || event.key === '=') {
+                adjustZoom(-5);
+            } else if (event.key === '-' || event.key === '_') {
+                adjustZoom(5);
             }
         });
+
+        document.addEventListener('wheel', (event) => {
+            adjustZoom(event.deltaY > 0 ? 5 : -5);
+        });
+    </script>
+    <script>
         // Full dataset from original
         const items = [
             { "id": 1, "title": "Summerhill Dawn", "tags": ["Forget Me Nots", "video"], "videoUrl": "https://www.youtube.com/embed/NgAvUmezuC8" },
@@ -201,7 +172,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-         const uniqueTags = new Set();
+           const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -212,55 +183,98 @@
         let nodeElements = new Map();
         let simulation;
 
-     function createNode(x, y, z, title, isTag = false, id) {
+        function createForceSimulation() {
+            const nodes = [];
+            const links = [];
+
+            // Create nodes with larger initial spread
+            items.forEach(item => {
+                nodes.push({
+                    id: item.id,
+                    title: item.title,
+                    isTag: false,
+                    x: Math.random() * 20 - 10,  // Larger initial spread
+                    y: Math.random() * 20 - 10,
+                    z: Math.random() * 20 - 10
+                });
+            });
+
+            tags.forEach(tag => {
+                nodes.push({
+                    id: tag,
+                    title: tag,
+                    isTag: true,
+                    x: Math.random() * 20 - 10,  // Larger initial spread
+                    y: Math.random() * 20 - 10,
+                    z: Math.random() * 20 - 10
+                });
+            });
+
+            // Create links
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    links.push({
+                        source: nodes.find(n => n.id === item.id),
+                        target: nodes.find(n => n.id === tag)
+                    });
+                });
+            });
+
+            // Create simulation with space-like forces
+            const sim = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .distance(8)         // Longer link distance
+                    .strength(0.1))      // Weaker link strength for more floating
+                .force("charge", d3.forceManyBody()
+                    .strength(-10)       // Stronger repulsion
+                    .distanceMax(30))    // Longer range of repulsion
+                .force("center", d3.forceCenter(0, 0)
+                    .strength(0.05))     // Very weak centering force
+                .force("collide", d3.forceCollide(2)
+                    .strength(0.2))      // Light collision
+                .velocityDecay(0.3)      // Lower decay for more drifting
+                .alphaMin(0.001)
+                .alphaDecay(0.01);       // Slower decay for longer movement
+
+            // Add a very gentle containment force
+            sim.force("box", () => {
+                const bound = 15; // Larger boundary
+                nodes.forEach(node => {
+                    if (Math.abs(node.x) > bound) {
+                        const force = (Math.abs(node.x) - bound) * 0.05;
+                        node.x -= Math.sign(node.x) * force;
+                    }
+                    if (Math.abs(node.y) > bound) {
+                        const force = (Math.abs(node.y) - bound) * 0.05;
+                        node.y -= Math.sign(node.y) * force;
+                    }
+                    if (Math.abs(node.z) > bound) {
+                        const force = (Math.abs(node.z) - bound) * 0.05;
+                        node.z -= Math.sign(node.z) * force;
+                    }
+                });
+            });
+
+            return sim;
+        }
+
+        function createNode(x, y, z, title, isTag = false, id) {
             const nodeEntity = document.createElement('a-entity');
             nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
             nodeEntity.setAttribute('data-id', id);
-            nodeEntity.classList.add('node'); // Add class for raycaster
 
-            // Clickable behavior
-            nodeEntity.setAttribute('class', 'node interactive');
-            nodeEntity.addEventListener('click', function (evt) {
-                // Highlight node when clicked
-                const sphere = this.querySelector('a-sphere');
-                const currentColor = sphere.getAttribute('material').emissiveIntensity;
-                sphere.setAttribute('material', 'emissiveIntensity', currentColor === 0.3 ? 1.0 : 0.3);
-            });
-
-            // Create glow effect
-            const glow = document.createElement('a-sphere');
-            glow.setAttribute('radius', isTag ? 0.6 : 0.8);
-            glow.setAttribute('material', {
-                shader: 'standard',
-                opacity: 0.3,
-                color: isTag ? '#ff6666' : '#66aaff',
-                emissive: isTag ? '#ff0000' : '#0066ff',
-                emissiveIntensity: 0.5
-            });
-            nodeEntity.appendChild(glow);
-
-            // Core sphere
             const sphere = document.createElement('a-sphere');
             sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
-            sphere.setAttribute('material', {
-                shader: 'standard',
-                color: isTag ? '#ff3333' : '#4a90e2',
-                metalness: 0.8,
-                roughness: 0.2,
-                emissive: isTag ? '#ff0000' : '#0066ff',
-                emissiveIntensity: 0.3
-            });
+            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
             nodeEntity.appendChild(sphere);
 
-            // Enhanced text visibility
             const text = document.createElement('a-text');
             text.setAttribute('value', title);
-            text.setAttribute('position', '0 1 0');
-            text.setAttribute('scale', '1 1 1');
+            text.setAttribute('position', '0 0.8 0');
+            text.setAttribute('scale', '0.5 0.5 0.5');
             text.setAttribute('align', 'center');
             text.setAttribute('color', 'white');
             text.setAttribute('look-at', '[camera]');
-            text.setAttribute('material', {shader: 'flat'});
             nodeEntity.appendChild(text);
 
             nodeElements.set(id, nodeEntity);
@@ -272,9 +286,8 @@
             line.setAttribute('line', {
                 start: start,
                 end: end,
-                color: '#4488ff',
-                opacity: 0.2,
-                width: 2
+                color: '#666666',
+                opacity: 0.3  // More subtle connections
             });
             
             connections.push({
@@ -286,13 +299,32 @@
             return line;
         }
 
+        function updateLines() {
+            connections.forEach(connection => {
+                const startNode = nodeElements.get(connection.startId);
+                const endNode = nodeElements.get(connection.endId);
+                
+                if (startNode && endNode) {
+                    const startPos = startNode.getAttribute('position');
+                    const endPos = endNode.getAttribute('position');
+                    
+                    connection.element.setAttribute('line', {
+                        start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                        end: `${endPos.x} ${endPos.y} ${endPos.z}`,
+                        color: '#666666',
+                        opacity: 0.3  // More subtle connections
+                    });
+                }
+            });
+        }
+
         function createCircularLayout() {
             const container = document.querySelector('#nodes');
             container.innerHTML = '';
             connections = [];
             nodeElements.clear();
             
-            const radius = 15; // Increased radius for better spacing
+            const radius = 6;
             const height = 0;
             
             const itemAngleStep = (2 * Math.PI) / items.length;
@@ -318,6 +350,7 @@
                 container.appendChild(node);
             });
 
+            // Fixed the createLine call by adding all necessary parameters
             items.forEach(item => {
                 const itemNode = nodeElements.get(item.id);
                 item.tags.forEach(tag => {
@@ -335,77 +368,6 @@
                     }
                 });
             });
-        }
-
-        function updateLines() {
-            connections.forEach(connection => {
-                const startNode = nodeElements.get(connection.startId);
-                const endNode = nodeElements.get(connection.endId);
-                
-                if (startNode && endNode) {
-                    const startPos = startNode.getAttribute('position');
-                    const endPos = endNode.getAttribute('position');
-                    
-                    connection.element.setAttribute('line', {
-                        start: `${startPos.x} ${startPos.y} ${startPos.z}`,
-                        end: `${endPos.x} ${endPos.y} ${endPos.z}`,
-                        color: '#4488ff',
-                        opacity: 0.2,
-                        width: 2
-                    });
-                }
-            });
-        }
-
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
-
-            items.forEach(item => {
-                nodes.push({
-                    id: item.id,
-                    title: item.title,
-                    isTag: false,
-                    x: Math.random() * 40 - 20,
-                    y: Math.random() * 40 - 20,
-                    z: Math.random() * 40 - 20
-                });
-            });
-
-            tags.forEach(tag => {
-                nodes.push({
-                    id: tag,
-                    title: tag,
-                    isTag: true,
-                    x: Math.random() * 40 - 20,
-                    y: Math.random() * 40 - 20,
-                    z: Math.random() * 40 - 20
-                });
-            });
-
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
-            });
-
-            return d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links)
-                    .distance(15)
-                    .strength(0.05))
-                .force("charge", d3.forceManyBody()
-                    .strength(-20)
-                    .distanceMax(50))
-                .force("center", d3.forceCenter(0, 0)
-                    .strength(0.01))
-                .force("collide", d3.forceCollide(3)
-                    .strength(0.1))
-                .velocityDecay(0.2)
-                .alphaMin(0.001)
-                .alphaDecay(0.005);
         }
 
         function updateNodesFromSimulation() {
@@ -430,87 +392,10 @@
                 createCircularLayout();
             }
         }
-
-        // Create background stars
-        function createStars() {
-            const starsContainer = document.querySelector('#stars');
-            for (let i = 0; i < 1000; i++) {
-                const star = document.createElement('a-sphere');
-                const distance = 50 + Math.random() * 100;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI * 2;
-                
-                const x = distance * Math.sin(phi) * Math.cos(theta);
-                const y = distance * Math.sin(phi) * Math.sin(theta);
-                const z = distance * Math.cos(phi);
-                
-                star.setAttribute('position', `${x} ${y} ${z}`);
-                star.setAttribute('radius', Math.random() * 0.1);
-                star.setAttribute('material', {
-                    shader: 'standard',
-                    color: '#ffffff',
-                    emissive: '#ffffff',
-                    emissiveIntensity: Math.random() + 0.5
-                });
-                starsContainer.appendChild(star);
-            }
-        }
-
-        // Initialize the scene
+       
         document.querySelector('a-scene').addEventListener('loaded', function () {
             console.log('Scene loaded, creating layout...');
-            createStars();
             createCircularLayout();
-        });
-  <script>
-        AFRAME.registerComponent('movement-controls', {
-            schema: {
-                speed: {default: 0.3},
-                fly: {default: true}
-            },
-
-            init: function () {
-                this.velocity = new THREE.Vector3();
-                this.moveVector = new THREE.Vector3();
-                
-                // Setup handlers for controller events
-                this.setupControllers();
-            },
-
-            setupControllers: function () {
-                // Left controller for movement
-                const leftController = document.querySelector('#leftHand');
-                if (leftController) {
-                    leftController.addEventListener('axismove', (e) => {
-                        // Vertical movement with grip buttons
-                        if (e.detail.axis[1] < -0.5) {
-                            this.el.object3D.position.y += this.data.speed;
-                        } else if (e.detail.axis[1] > 0.5) {
-                            this.el.object3D.position.y -= this.data.speed;
-                        }
-                    });
-                }
-
-                // Right controller for rotation
-                const rightController = document.querySelector('#rightHand');
-                if (rightController) {
-                    rightController.addEventListener('axismove', (e) => {
-                        // Rotation
-                        if (Math.abs(e.detail.axis[0]) > 0.2) {
-                            this.el.object3D.rotation.y -= e.detail.axis[0] * 0.05;
-                        }
-                    });
-                }
-            },
-
-            tick: function () {
-                const cameraRig = this.el;
-                const rotation = cameraRig.getAttribute('rotation');
-                
-                // Apply movement based on controller input
-                this.velocity.multiplyScalar(0.85); // Add some drag
-                cameraRig.object3D.position.add(this.velocity);
-            }
         });
     </script>
 </body>
