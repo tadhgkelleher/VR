@@ -190,7 +190,7 @@
             items.forEach(item => {
                 connections.set(item.id, item.tags.length);
                 item.tags.forEach(tag => {
-                    connections.set(tag, (connections.get(tag) || 0) + 1);
+                    connections.set(tag, (connections.get(tag) || 0) + 2);
                 });
             });
             return connections;
@@ -229,7 +229,7 @@
             // Calculate size based on connections (normalized)
             const baseSize = isTag ? 0.4 : 0.6;
             const connectionCount = connections.get(id) || 1;
-            const scaleFactor = 0.2 + (connectionCount * 0.15);
+            const scaleFactor = 0.2 + (connectionCount * 0.2);
             
             // Create the sphere with glow
             const sphere = document.createElement('a-sphere');
