@@ -332,30 +332,43 @@
 
 
 
-      function createNode(x, y, z, title, isTag = false, id) {
+    function createNode(x, y, z, title, isTag = false, id) {
     const nodeEntity = document.createElement('a-entity');
     nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
     nodeEntity.setAttribute('data-id', id);
 
+    // Create sphere node
     const sphere = document.createElement('a-sphere');
     sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
     sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
     nodeEntity.appendChild(sphere);
 
+    // Add text label
     const text = document.createElement('a-text');
     text.setAttribute('value', title);
-    text.setAttribute('position', '0 1.2 0'); // Position the label higher above the node
-    text.setAttribute('scale', '1.5 1.5 1.5'); // Increase text size for readability
+    text.setAttribute('position', '0 1.4 0'); // Position further above the node
+    text.setAttribute('scale', '2.5 2.5 2.5'); // Larger text scale for readability
     text.setAttribute('align', 'center');
-    text.setAttribute('color', 'white'); // Bright color for better contrast
-    text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
-    text.setAttribute('side', 'double'); // Make text visible from both sides
-    text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
+    text.setAttribute('color', '#ffffff'); // Bright white for maximum contrast
+    text.setAttribute('look-at', '[camera]'); // Always face the camera
+    text.setAttribute('side', 'double'); // Make visible from both sides
+    text.setAttribute('opacity', 1); // Fully opaque for better clarity
     nodeEntity.appendChild(text);
+
+    // Add background for text
+    const textBg = document.createElement('a-plane');
+    textBg.setAttribute('position', '0 1.4 -0.01'); // Slightly behind the text
+    textBg.setAttribute('width', '3'); // Width of the background
+    textBg.setAttribute('height', '0.8'); // Height of the background
+    textBg.setAttribute('color', '#000000'); // Black background for contrast
+    textBg.setAttribute('opacity', 0.6); // Semi-transparent background
+    textBg.setAttribute('side', 'double');
+    nodeEntity.appendChild(textBg);
 
     nodeElements.set(id, nodeEntity);
     return nodeEntity;
 }
+
 
         function createLine(start, end, startId, endId) {
             const line = document.createElement('a-entity');
