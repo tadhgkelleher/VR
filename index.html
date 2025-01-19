@@ -172,16 +172,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-        <a-scene cursor="rayOrigin: mouse" embedded>
-    <!-- Ensure camera is set for free navigation -->
-    <a-camera position="0 0 20" look-at="0 0 0" wasd-controls="enabled: true"></a-camera>
-
-    <!-- 3D scene content -->
-    <a-entity id="stars"></a-entity>
-    <a-entity id="nodes"></a-entity>
-</a-scene>
-
-   // Calculate node sizes based on connections
+    // Calculate node sizes based on connections
     function calculateNodeSizes() {
         const connections = new Map();
         items.forEach(item => {
@@ -408,6 +399,13 @@
                 }
             });
         }
+    }
+
+    // Camera positioning adjustment
+    const camera = document.querySelector('a-camera');
+    if (camera) {
+        camera.setAttribute('position', '0 10 30');  // Adjust camera position to view the entire graph
+        camera.setAttribute('look-at', '[nodes]');   // Make sure it looks at the nodes
     }
 </script>
 
