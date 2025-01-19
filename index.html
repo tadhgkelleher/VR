@@ -332,28 +332,30 @@
 
 
 
-        function createNode(x, y, z, title, isTag = false, id) {
-            const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
-            nodeEntity.setAttribute('data-id', id);
+      function createNode(x, y, z, title, isTag = false, id) {
+    const nodeEntity = document.createElement('a-entity');
+    nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+    nodeEntity.setAttribute('data-id', id);
 
-            const sphere = document.createElement('a-sphere');
-            sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
-            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
-            nodeEntity.appendChild(sphere);
+    const sphere = document.createElement('a-sphere');
+    sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
+    sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
+    nodeEntity.appendChild(sphere);
 
-            const text = document.createElement('a-text');
-            text.setAttribute('value', title);
-            text.setAttribute('position', '0 0.8 0');
-            text.setAttribute('scale', '0.5 0.5 0.5');
-            text.setAttribute('align', 'center');
-            text.setAttribute('color', 'white');
-            text.setAttribute('look-at', '[camera]');
-            nodeEntity.appendChild(text);
+    const text = document.createElement('a-text');
+    text.setAttribute('value', title);
+    text.setAttribute('position', '0 1.2 0'); // Position the label higher above the node
+    text.setAttribute('scale', '1.5 1.5 1.5'); // Increase text size for readability
+    text.setAttribute('align', 'center');
+    text.setAttribute('color', 'white'); // Bright color for better contrast
+    text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
+    text.setAttribute('side', 'double'); // Make text visible from both sides
+    text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
+    nodeEntity.appendChild(text);
 
-            nodeElements.set(id, nodeEntity);
-            return nodeEntity;
-        }
+    nodeElements.set(id, nodeEntity);
+    return nodeEntity;
+}
 
         function createLine(start, end, startId, endId) {
             const line = document.createElement('a-entity');
