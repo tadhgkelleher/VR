@@ -170,7 +170,8 @@
   { "id": 84, "title": "Pete Wingfield", "tags": ["Producer", "Paul McCartney", "Everly Bros", "Van Morrison"] },
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
-  function calculateNodeSizes() {
+ / Calculate node sizes based on connections
+        function calculateNodeSizes() {
             const connections = new Map();
             items.forEach(item => {
                 connections.set(item.id, item.tags.length);
@@ -245,45 +246,99 @@
             return nodeEntity;
         }
 
-           const uniqueTags = new Set();
-        items.forEach(item => {
-            item.tags.forEach(tag => uniqueTags.add(tag));
-        });
-        const tags = Array.from(uniqueTags);
+        function createCircularLayout() {
+            const container = document.querySelector('#nodes');
+            container.innerHTML = '';
+            connections = [];
+            nodeElements.clear();
+            
+            const nodeConnections = calculateNodeSizes();
+            
+            // Create outer circle of items
+            const radius = 15;  // Larger radius for space-like feel
+            const itemAngleStep = (2 * Math.PI) / items.length;
+            
+            items.forEach((item, index) => {
+                const angle = itemAngleStep * index;
+                // Add slight random variation to z for more 3D feel
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                const z = (Math.random() - 0.5) * 5;  // Random depth variation
+                
+                const node = createNode(x, y, z, item.title, false, item.id, nodeConnections);
+                container.appendChild(node);
+            });
 
-        let physicsEnabled = false;
-        let connections = [];
-        let nodeElements = new Map();
-        let simulation;
+            // Create inner circle of tags
+            const uniqueTags = new Set(items.flatMap(item => item.tags));
+            const tags = Array.from(uniqueTags);
+            const tagRadius = radius * 0.5;  // Inner circle for tags
+            const tagAngleStep = (2 * Math.PI) / tags.length;
+            
+            tags.forEach((tag, index) => {
+                const angle = tagAngleStep * index;
+                const x = tagRadius * Math.cos(angle);
+                const y = tagRadius * Math.sin(angle);
+                const z = (Math.random() - 0.5) * 3;  // Smaller depth variation for tags
+                
+                const node = createNode(x, y, z, tag, true, tag, nodeConnections);
+                container.appendChild(node);
+            });
 
+            // Create connections
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    const startNode = nodeElements.get(item.id);
+                    const endNode = nodeElements.get(tag);
+                    if (startNode && endNode) {
+                        const startPos = startNode.getAttribute('position');
+                        const endPos = endNode.getAttribute('position');
+                        const line = document.createElement('a-entity');
+                        line.setAttribute('line', {
+                            start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                            end: `${endPos.x} ${endPos.y} ${endPos.z}`,
+                            color: '#334455',
+                            opacity: 0.2
+                        });
+                        container.appendChild(line);
+                        connections.push({
+                            element: line,
+                            startId: item.id,
+                            endId: tag
+                        });
+                    }
+                });
+            });
+        }
+
+        function toggleConnectionLines() {
+            showConnections = !showConnections;
+            connections.forEach(conn => {
+                conn.element.setAttribute('visible', showConnections);
+            });
+        }
+
+        // Modified force simulation for space-like behavior
         function createForceSimulation() {
             const nodes = [];
             const links = [];
+            const nodeConnections = calculateNodeSizes();
 
-            // Create nodes with larger initial spread
-            items.forEach(item => {
+            // Use current positions as starting points for simulation
+            nodeElements.forEach((element, id) => {
+                const pos = element.getAttribute('position');
+                const isTag = element.querySelector('a-sphere').getAttribute('radius') < 0.6;
                 nodes.push({
-                    id: item.id,
-                    title: item.title,
-                    isTag: false,
-                    x: Math.random() * 20 - 10,  // Larger initial spread
-                    y: Math.random() * 20 - 10,
-                    z: Math.random() * 20 - 10
+                    id: id,
+                    title: element.querySelector('a-text').getAttribute('value'),
+                    isTag: isTag,
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                    connections: nodeConnections.get(id)
                 });
             });
 
-            tags.forEach(tag => {
-                nodes.push({
-                    id: tag,
-                    title: tag,
-                    isTag: true,
-                    x: Math.random() * 20 - 10,  // Larger initial spread
-                    y: Math.random() * 20 - 10,
-                    z: Math.random() * 20 - 10
-                });
-            });
-
-            // Create links
             items.forEach(item => {
                 item.tags.forEach(tag => {
                     links.push({
@@ -293,183 +348,56 @@
                 });
             });
 
-            // Create simulation with space-like forces
-            const sim = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links)
-                    .distance(8)         // Longer link distance
-                    .strength(0.1))      // Weaker link strength for more floating
-                .force("charge", d3.forceManyBody()
-                    .strength(-10)       // Stronger repulsion
-                    .distanceMax(30))    // Longer range of repulsion
-                .force("center", d3.forceCenter(0, 0)
-                    .strength(0.05))     // Very weak centering force
-                .force("collide", d3.forceCollide(2)
-                    .strength(0.2))      // Light collision
-                .velocityDecay(0.3)      // Lower decay for more drifting
+            return d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).distance(8).strength(0.05))
+                .force("charge", d3.forceManyBody().strength(-30))
+                .force("center", d3.forceCenter(0, 0).strength(0.01))
+                .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.5))
+                .velocityDecay(0.3)
                 .alphaMin(0.001)
-                .alphaDecay(0.01);       // Slower decay for longer movement
-
-            // Add a very gentle containment force
-            sim.force("box", () => {
-                const bound = 15; // Larger boundary
-                nodes.forEach(node => {
-                    if (Math.abs(node.x) > bound) {
-                        const force = (Math.abs(node.x) - bound) * 0.05;
-                        node.x -= Math.sign(node.x) * force;
-                    }
-                    if (Math.abs(node.y) > bound) {
-                        const force = (Math.abs(node.y) - bound) * 0.05;
-                        node.y -= Math.sign(node.y) * force;
-                    }
-                    if (Math.abs(node.z) > bound) {
-                        const force = (Math.abs(node.z) - bound) * 0.05;
-                        node.z -= Math.sign(node.z) * force;
-                    }
-                });
-            });
-
-            return sim;
+                .alphaDecay(0.01);
         }
 
-        function createNode(x, y, z, title, isTag = false, id) {
-            const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
-            nodeEntity.setAttribute('data-id', id);
-
-            const sphere = document.createElement('a-sphere');
-            sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
-            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
-            nodeEntity.appendChild(sphere);
-
-            const text = document.createElement('a-text');
-            text.setAttribute('value', title);
-            text.setAttribute('position', '0 0.8 0');
-            text.setAttribute('scale', '0.5 0.5 0.5');
-            text.setAttribute('align', 'center');
-            text.setAttribute('color', 'white');
-            text.setAttribute('look-at', '[camera]');
-            nodeEntity.appendChild(text);
-
-            nodeElements.set(id, nodeEntity);
-            return nodeEntity;
-        }
-
-        function createLine(start, end, startId, endId) {
-            const line = document.createElement('a-entity');
-            line.setAttribute('line', {
-                start: start,
-                end: end,
-                color: '#666666',
-                opacity: 0.3  // More subtle connections
-            });
-            
-            connections.push({
-                element: line,
-                startId: startId,
-                endId: endId
-            });
-            
-            return line;
-        }
-
-        function updateLines() {
-            connections.forEach(connection => {
-                const startNode = nodeElements.get(connection.startId);
-                const endNode = nodeElements.get(connection.endId);
-                
-                if (startNode && endNode) {
-                    const startPos = startNode.getAttribute('position');
-                    const endPos = endNode.getAttribute('position');
-                    
-                    connection.element.setAttribute('line', {
-                        start: `${startPos.x} ${startPos.y} ${startPos.z}`,
-                        end: `${endPos.x} ${endPos.y} ${endPos.z}`,
-                        color: '#666666',
-                        opacity: 0.3  // More subtle connections
-                    });
-                }
-            });
-        }
-
-        function createCircularLayout() {
-            const container = document.querySelector('#nodes');
-            container.innerHTML = '';
-            connections = [];
-            nodeElements.clear();
-            
-            const radius = 6;
-            const height = 0;
-            
-            const itemAngleStep = (2 * Math.PI) / items.length;
-            items.forEach((item, index) => {
-                const angle = itemAngleStep * index;
-                const x = radius * Math.cos(angle);
-                const y = radius * Math.sin(angle);
-                const z = height;
-                
-                const node = createNode(x, y, z, item.title, false, item.id);
-                container.appendChild(node);
-            });
-
-            const tagRadius = radius * 0.5;
-            const tagAngleStep = (2 * Math.PI) / tags.length;
-            tags.forEach((tag, index) => {
-                const angle = tagAngleStep * index;
-                const x = tagRadius * Math.cos(angle);
-                const y = tagRadius * Math.sin(angle);
-                const z = height;
-                
-                const node = createNode(x, y, z, tag, true, tag);
-                container.appendChild(node);
-            });
-
-            // Fixed the createLine call by adding all necessary parameters
-            items.forEach(item => {
-                const itemNode = nodeElements.get(item.id);
-                item.tags.forEach(tag => {
-                    const tagNode = nodeElements.get(tag);
-                    if (itemNode && tagNode) {
-                        const startPos = itemNode.getAttribute('position');
-                        const endPos = tagNode.getAttribute('position');
-                        const line = createLine(
-                            `${startPos.x} ${startPos.y} ${startPos.z}`,
-                            `${endPos.x} ${endPos.y} ${endPos.z}`,
-                            item.id,
-                            tag
-                        );
-                        container.appendChild(line);
-                    }
-                });
-            });
-        }
-
-        function updateNodesFromSimulation() {
-            simulation.nodes().forEach(node => {
-                const nodeEntity = nodeElements.get(node.id);
-                if (nodeEntity) {
-                    nodeEntity.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
-                }
-            });
-            updateLines();
-        }
-
-        function togglePhysics() {
-            physicsEnabled = !physicsEnabled;
-            if (physicsEnabled) {
-                simulation = createForceSimulation();
-                simulation.on('tick', updateNodesFromSimulation);
-            } else {
-                if (simulation) {
-                    simulation.stop();
-                }
-                createCircularLayout();
-            }
-        }
-       
+        // Initialize visualization
         document.querySelector('a-scene').addEventListener('loaded', function () {
-            console.log('Scene loaded, creating layout...');
+            createStarfield();
             createCircularLayout();
         });
+
+        function togglePhysics() {
+            if (simulation) {
+                simulation.stop();
+                simulation = null;
+                createCircularLayout();  // Reset to circular layout when physics is disabled
+            } else {
+                simulation = createForceSimulation();
+                simulation.on('tick', () => {
+                    simulation.nodes().forEach(node => {
+                        const el = nodeElements.get(node.id);
+                        if (el) {
+                            el.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
+                        }
+                    });
+                    
+                    if (showConnections) {
+                        connections.forEach(conn => {
+                            const start = nodeElements.get(conn.startId);
+                            const end = nodeElements.get(conn.endId);
+                            if (start && end) {
+                                const startPos = start.getAttribute('position');
+                                const endPos = end.getAttribute('position');
+                                conn.element.setAttribute('line', {
+                                    start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                                    end: `${endPos.x} ${endPos.y} ${endPos.z}`,
+                                    color: '#334455',
+                                    opacity: 0.2
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
