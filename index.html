@@ -350,8 +350,8 @@
     });
 
     return d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).distance(20).strength(0.1)) // Increase link distance
-        .force("charge", d3.forceManyBody().strength(-50)) // Make nodes repel each other more
+        .force("link", d3.forceLink(links).distance(10).strength(0.1)) // Increase link distance
+        .force("charge", d3.forceManyBody().strength(-10)) // Make nodes repel each other more
         .force("center", d3.forceCenter(0, 0).strength(0.05)) // Adjust center force
         .force("collide", d3.forceCollide(node => 1 + (node.connections || 1) * 0.8)) // Increase collision strength
         .velocityDecay(0.3)
