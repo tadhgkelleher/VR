@@ -331,8 +331,7 @@
 }
 
 
-
- function createNode(x, y, z, title, isTag = false, id) {
+function createNode(x, y, z, title, isTag = false, id) {
     const nodeEntity = document.createElement('a-entity');
     nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
     nodeEntity.setAttribute('data-id', id);
@@ -351,6 +350,10 @@
     text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
     text.setAttribute('side', 'double'); // Make text visible from both sides
     text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
+
+    // Specify a font (e.g., using a Google Fonts URL or the default A-Frame font)
+    text.setAttribute('font', 'https://cdn.aframe.io/fonts/mozillavr.fnt'); // Use Mozilla VR font
+
     nodeEntity.appendChild(text);
 
     nodeElements.set(id, nodeEntity);
