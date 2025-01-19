@@ -469,18 +469,44 @@
             updateLines();
         }
 
-        function togglePhysics() {
-            physicsEnabled = !physicsEnabled;
-            if (physicsEnabled) {
-                simulation = createForceSimulation();
-                simulation.on('tick', updateNodesFromSimulation);
-            } else {
-                if (simulation) {
-                    simulation.stop();
-                }
-                createCircularLayout();
+       function togglePhysics() {
+    physicsEnabled = !physicsEnabled;
+
+    if (physicsEnabled) {
+        // Start physics with interpolation
+        simulation = createForceSimulation();
+
+        const nodes = simulation.nodes();
+        nodes.forEach(node => {
+            const startNode = nodeElements.get(node.id);
+            if (startNode) {
+                const startPos = startNode.getAttribute('position');
+                const interpolator = d3.interpolate(
+                    { x: parseFloat(startPos.x), y: parseFloat(startPos.y), z: parseFloat(startPos.z) },
+                    { x: node.x, y: node.y, z: node.z }
+                );
+
+                d3.select(startNode)
+                    .transition()
+                    .duration(2000) // Smooth transition over 2 seconds
+                    .tween("position", function () {
+                        return t => {
+                            const pos = interpolator(t);
+                            startNode.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+                        };
+                    });
             }
+        });
+
+        simulation.on('tick', updateNodesFromSimulation);
+    } else {
+        // Stop physics and smoothly transition back to circular layout
+        if (simulation) {
+            simulation.stop();
         }
+        createCircularLayout();
+    }
+}
        
         document.querySelector('a-scene').addEventListener('loaded', function () {
             console.log('Scene loaded, creating layout...');
