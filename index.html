@@ -1,127 +1,10 @@
 <!DOCTYPE html>
 <html>
+<!-- [Previous head and style sections remain the same] -->
 <head>
-    <title>Space Connections Graph</title>
+    <title>VR Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    
-    <script>
-        // Previous VR movement component code remains the same
-        AFRAME.registerComponent('vr-movement', {
-            schema: {
-                speed: { type: 'number', default: 0.1 }
-            },
-            init: function() {
-                this.moveVector = new THREE.Vector3();
-                this.bindMethods();
-                this.setupControls();
-            },
-            bindMethods: function() {
-                this.onTriggerDown = this.onTriggerDown.bind(this);
-                this.onTriggerUp = this.onTriggerUp.bind(this);
-                this.onThumbstickMove = this.onThumbstickMove.bind(this);
-                this.onGripDown = this.onGripDown.bind(this);
-                this.onGripUp = this.onGripUp.bind(this);
-            },
-            setupControls: function() {
-                this.el.addEventListener('triggerstartright', this.onTriggerDown);
-                this.el.addEventListener('triggerendright', this.onTriggerUp);
-                this.el.addEventListener('thumbstickmoved', this.onThumbstickMove);
-                this.el.addEventListener('gripdown', this.onGripDown);
-                this.el.addEventListener('gripup', this.onGripUp);
-            },
-            onTriggerDown: function(evt) {
-                this.isTriggerDown = true;
-            },
-            onTriggerUp: function(evt) {
-                this.isTriggerDown = false;
-            },
-            onThumbstickMove: function(evt) {
-                const { x, y } = evt.detail;
-                this.moveVector.x = x * this.data.speed;
-                this.moveVector.z = y * this.data.speed;
-            },
-            onGripDown: function(evt) {
-                this.isGripDown = true;
-            },
-            onGripUp: function(evt) {
-                this.isGripDown = false;
-            },
-            tick: function() {
-                if (this.moveVector.length() > 0) {
-                    const rotation = this.el.object3D.rotation;
-                    const moveVectorRotated = this.moveVector.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation.y);
-                    this.el.object3D.position.add(moveVectorRotated);
-                }
-                if (this.isGripDown) {
-                    this.el.object3D.position.y += this.data.speed;
-                }
-            }
-        });
-
-        // Add starfield component
-        AFRAME.registerComponent('starfield', {
-            init: function() {
-                this.stars = [];
-                this.createStars();
-            },
-            createStars: function() {
-                const geometry = new THREE.BufferGeometry();
-                const vertices = [];
-                
-                for (let i = 0; i < 2000; i++) {
-                    const x = (Math.random() - 0.5) * 2000;
-                    const y = (Math.random() - 0.5) * 2000;
-                    const z = (Math.random() - 0.5) * 2000;
-                    vertices.push(x, y, z);
-                }
-                
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-                const material = new THREE.PointsMaterial({
-                    color: 0xFFFFFF,
-                    size: 2,
-                    sizeAttenuation: true
-                });
-                
-                this.starField = new THREE.Points(geometry, material);
-                this.el.setObject3D('stars', this.starField);
-            },
-            tick: function(time, delta) {
-                if (physicsEnabled) {
-                    // Rotate and move stars when physics is enabled
-                    this.starField.rotation.y += 0.0001 * delta;
-                    this.starField.rotation.x += 0.0001 * delta;
-                    
-                    // Move stars to create flying effect
-                    const positions = this.starField.geometry.attributes.position.array;
-                    for (let i = 0; i < positions.length; i += 3) {
-                        positions[i + 2] += 0.1;  // Move stars toward viewer
-                        if (positions[i + 2] > 1000) {
-                            positions[i + 2] = -1000;  // Reset position when too close
-                        }
-                    }
-                    this.starField.geometry.attributes.position.needsUpdate = true;
-                }
-            }
-        });
-
-        // Node interaction component with glow effect
-        AFRAME.registerComponent('node-interaction', {
-            init: function() {
-                this.el.addEventListener('raycaster-intersected', () => {
-                    this.el.setAttribute('scale', '1.2 1.2 1.2');
-                    const sphere = this.el.querySelector('a-sphere');
-                    sphere.setAttribute('material', 'emissiveIntensity', 0.5);
-                });
-                this.el.addEventListener('raycaster-intersected-cleared', () => {
-                    this.el.setAttribute('scale', '1 1 1');
-                    const sphere = this.el.querySelector('a-sphere');
-                    sphere.setAttribute('material', 'emissiveIntensity', 0.2);
-                });
-            }
-        });
-    </script>
-
     <style>
         .controls {
             position: fixed;
@@ -150,46 +33,55 @@
 </head>
 <body>
     <div class="controls">
-        <h2>Space Network Explorer</h2>
-        <p>VR Controls:</p>
-        <ul>
-            <li>Thumbstick: Move</li>
-            <li>Grip: Float Up</li>
-            <li>Trigger: Select</li>
-        </ul>
+        <h2>VR Connections Graph</h2>
+        <p>Use VR headset or mouse to explore</p>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
     </div>
     
     <a-scene>
         <!-- Environment -->
-        <a-sky color="#000011"></a-sky>
-        <a-entity starfield></a-entity>
+        <a-sky color="#1a1a1a"></a-sky>
+        <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
         
-        <!-- Camera Rig -->
-        <a-entity id="cameraRig" position="0 1.6 5" vr-movement="speed: 0.15">
-            <a-camera look-controls wasd-controls="fly: true; acceleration: 20;">
-                <a-cursor raycaster="objects: .node" color="#4CC3D9"></a-cursor>
+        <!-- Camera -->
+        <a-entity position="0 1.6 8">
+            <a-camera id="main-camera" look-controls wasd-controls>
+                <a-cursor color="#4CC3D9"></a-cursor>
             </a-camera>
-            
-            <!-- Controllers -->
-            <a-entity id="leftHand"
-                      laser-controls="hand: left"
-                      raycaster="objects: .node; lineColor: #FF6666"
-                      line="color: #FF6666; opacity: 0.5"></a-entity>
-            <a-entity id="rightHand"
-                      laser-controls="hand: right"
-                      raycaster="objects: .node; lineColor: #66FF66"
-                      line="color: #66FF66; opacity: 0.5"></a-entity>
         </a-entity>
-
+        
         <!-- Lighting -->
-        <a-light type="ambient" color="#222"></a-light>
-        <a-light type="point" position="0 0 0" intensity="0.8" color="#ffffff"></a-light>
+        <a-light type="ambient" color="#BBB"></a-light>
+        <a-light type="directional" position="0 1 1" intensity="0.6"></a-light>
 
-        <!-- Containers -->
+        <!-- Nodes container -->
         <a-entity id="nodes"></a-entity>
     </a-scene>
+   <script>
+        // [Previous camera zoom controls remain the same]
+        const camera = document.querySelector('#main-camera');
+        const cameraEl = camera.getObject3D('camera');
 
+        function adjustZoom(delta) {
+            if (cameraEl) {
+                const newFOV = Math.min(100, Math.max(20, cameraEl.fov + delta));
+                cameraEl.fov = newFOV;
+                cameraEl.updateProjectionMatrix();
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === '+' || event.key === '=') {
+                adjustZoom(-5);
+            } else if (event.key === '-' || event.key === '_') {
+                adjustZoom(5);
+            }
+        });
+
+        document.addEventListener('wheel', (event) => {
+            adjustZoom(event.deltaY > 0 ? 5 : -5);
+        });
+    </script>
     <script>
         // Full dataset from original
         const items = [
@@ -280,7 +172,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-                 const uniqueTags = new Set();
+           const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -291,106 +183,103 @@
         let nodeElements = new Map();
         let simulation;
 
-function createForceSimulation() {
-    const nodes = [];
-    const links = [];
+        function createForceSimulation() {
+            const nodes = [];
+            const links = [];
 
-    // Create nodes
-    items.forEach(item => {
-        nodes.push({
-            id: item.id,
-            title: item.title,
-            isTag: false,
-            x: Math.random() * 20 - 10,  // Larger initial spread
-            y: Math.random() * 20 - 10,
-            z: Math.random() * 20 - 10
-        });
-    });
-
-    tags.forEach(tag => {
-        nodes.push({
-            id: tag,
-            title: tag,
-            isTag: true,
-            x: Math.random() * 20 - 10,  // Larger initial spread
-            y: Math.random() * 20 - 10,
-            z: Math.random() * 20 - 10
-        });
-    });
-
-    // Create links
-    items.forEach(item => {
-        item.tags.forEach(tag => {
-            links.push({
-                source: nodes.find(n => n.id === item.id),
-                target: nodes.find(n => n.id === tag)
+            // Create nodes with larger initial spread
+            items.forEach(item => {
+                nodes.push({
+                    id: item.id,
+                    title: item.title,
+                    isTag: false,
+                    x: Math.random() * 20 - 10,  // Larger initial spread
+                    y: Math.random() * 20 - 10,
+                    z: Math.random() * 20 - 10
+                });
             });
-        });
-    });
 
-    // Create simulation
-    const sim = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links)
-            .distance(100)
-            .strength(0.02))
-        .force("charge", d3.forceManyBody()
-            .strength(-1)
-            .distanceMax(100))
-        .force("center", d3.forceCenter(0, 0)
-            .strength(0.01))
-        .force("collide", d3.forceCollide(1)
-            .strength(0.1))
-        .velocityDecay(0.9)
-        .alphaMin(0.01)
-        .alphaDecay(0.002)
-        .alpha(0.2);
+            tags.forEach(tag => {
+                nodes.push({
+                    id: tag,
+                    title: tag,
+                    isTag: true,
+                    x: Math.random() * 20 - 10,  // Larger initial spread
+                    y: Math.random() * 20 - 10,
+                    z: Math.random() * 20 - 10
+                });
+            });
 
-    // Update lines on each tick
-    sim.on("tick", () => {
-        nodes.forEach(node => {
-            const nodeElement = nodeElements.get(node.id);
-            if (nodeElement) {
-                nodeElement.setAttribute('position', `${node.x} ${node.y} ${node.z}`);
-            }
-        });
+            // Create links
+            items.forEach(item => {
+                item.tags.forEach(tag => {
+                    links.push({
+                        source: nodes.find(n => n.id === item.id),
+                        target: nodes.find(n => n.id === tag)
+                    });
+                });
+            });
 
-        updateLines(); // Update the lines after node positions are updated
-    });
+            // Create simulation with space-like forces
+            const sim = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .distance(8)         // Longer link distance
+                    .strength(0.1))      // Weaker link strength for more floating
+                .force("charge", d3.forceManyBody()
+                    .strength(-10)       // Stronger repulsion
+                    .distanceMax(30))    // Longer range of repulsion
+                .force("center", d3.forceCenter(0, 0)
+                    .strength(0.05))     // Very weak centering force
+                .force("collide", d3.forceCollide(2)
+                    .strength(0.2))      // Light collision
+                .velocityDecay(0.3)      // Lower decay for more drifting
+                .alphaMin(0.001)
+                .alphaDecay(0.01);       // Slower decay for longer movement
 
-    return sim;
-}
+            // Add a very gentle containment force
+            sim.force("box", () => {
+                const bound = 15; // Larger boundary
+                nodes.forEach(node => {
+                    if (Math.abs(node.x) > bound) {
+                        const force = (Math.abs(node.x) - bound) * 0.05;
+                        node.x -= Math.sign(node.x) * force;
+                    }
+                    if (Math.abs(node.y) > bound) {
+                        const force = (Math.abs(node.y) - bound) * 0.05;
+                        node.y -= Math.sign(node.y) * force;
+                    }
+                    if (Math.abs(node.z) > bound) {
+                        const force = (Math.abs(node.z) - bound) * 0.05;
+                        node.z -= Math.sign(node.z) * force;
+                    }
+                });
+            });
 
+            return sim;
+        }
 
-function createNode(x, y, z, title, isTag = false, id) {
-    const nodeEntity = document.createElement('a-entity');
-    nodeEntity.setAttribute('position', ${x} ${y} ${z});
-    nodeEntity.setAttribute('data-id', id);
+        function createNode(x, y, z, title, isTag = false, id) {
+            const nodeEntity = document.createElement('a-entity');
+            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+            nodeEntity.setAttribute('data-id', id);
 
-    const sphere = document.createElement('a-sphere');
-    sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
-    sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
-    nodeEntity.appendChild(sphere);
+            const sphere = document.createElement('a-sphere');
+            sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
+            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
+            nodeEntity.appendChild(sphere);
 
-    const text = document.createElement('a-text');
-    text.setAttribute('value', title);
-    text.setAttribute('position', '0 1.2 0'); // Position the label higher above the node
-    text.setAttribute('scale', '1.5 1.5 1.5'); // Increase text size for readability
-    text.setAttribute('align', 'center');
-    text.setAttribute('color', 'white'); // Bright color for better contrast
-    text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
-    text.setAttribute('side', 'double'); // Make text visible from both sides
-    text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
+            const text = document.createElement('a-text');
+            text.setAttribute('value', title);
+            text.setAttribute('position', '0 0.8 0');
+            text.setAttribute('scale', '0.5 0.5 0.5');
+            text.setAttribute('align', 'center');
+            text.setAttribute('color', 'white');
+            text.setAttribute('look-at', '[camera]');
+            nodeEntity.appendChild(text);
 
-    // Specify a font (e.g., using a Google Fonts URL or the default A-Frame font)
-    text.setAttribute('font', 'https://cdn.aframe.io/fonts/mozillavr.fnt'); // Use Mozilla VR font
-
-    nodeEntity.appendChild(text);
-
-    nodeElements.set(id, nodeEntity);
-    return nodeEntity;
-}
-
-
+            nodeElements.set(id, nodeEntity);
+            return nodeEntity;
+        }
 
         function createLine(start, end, startId, endId) {
             const line = document.createElement('a-entity');
@@ -420,8 +309,8 @@ function createNode(x, y, z, title, isTag = false, id) {
                     const endPos = endNode.getAttribute('position');
                     
                     connection.element.setAttribute('line', {
-                        start: ${startPos.x} ${startPos.y} ${startPos.z},
-                        end: ${endPos.x} ${endPos.y} ${endPos.z},
+                        start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                        end: `${endPos.x} ${endPos.y} ${endPos.z}`,
                         color: '#666666',
                         opacity: 0.3  // More subtle connections
                     });
@@ -491,44 +380,18 @@ function createNode(x, y, z, title, isTag = false, id) {
             updateLines();
         }
 
-       function togglePhysics() {
-    physicsEnabled = !physicsEnabled;
-
-    if (physicsEnabled) {
-        // Start physics with interpolation
-        simulation = createForceSimulation();
-
-        const nodes = simulation.nodes();
-        nodes.forEach(node => {
-            const startNode = nodeElements.get(node.id);
-            if (startNode) {
-                const startPos = startNode.getAttribute('position');
-                const interpolator = d3.interpolate(
-                    { x: parseFloat(startPos.x), y: parseFloat(startPos.y), z: parseFloat(startPos.z) },
-                    { x: node.x, y: node.y, z: node.z }
-                );
-
-                d3.select(startNode)
-                    .transition()
-                    .duration(2000) // Smooth transition over 2 seconds
-                    .tween("position", function () {
-                        return t => {
-                            const pos = interpolator(t);
-                            startNode.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
-                        };
-                    });
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            if (physicsEnabled) {
+                simulation = createForceSimulation();
+                simulation.on('tick', updateNodesFromSimulation);
+            } else {
+                if (simulation) {
+                    simulation.stop();
+                }
+                createCircularLayout();
             }
-        });
-
-        simulation.on('tick', updateNodesFromSimulation);
-    } else {
-        // Stop physics and smoothly transition back to circular layout
-        if (simulation) {
-            simulation.stop();
         }
-        createCircularLayout();
-    }
-}
        
         document.querySelector('a-scene').addEventListener('loaded', function () {
             console.log('Scene loaded, creating layout...');
