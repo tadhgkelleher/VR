@@ -291,7 +291,7 @@
         let nodeElements = new Map();
         let simulation;
 
- function createForceSimulation() {
+function createForceSimulation() {
     const nodes = [];
     const links = [];
 
@@ -364,77 +364,50 @@
         });
     });
 
+    // Hook line updates to simulation ticks
+    sim.on('tick', () => {
+        updateLines(); // Update lines on every simulation tick
+    });
+
     return sim;
 }
 
-
-function createNode(x, y, z, title, isTag = false, id) {
-    const nodeEntity = document.createElement('a-entity');
-    nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
-    nodeEntity.setAttribute('data-id', id);
-
-    const sphere = document.createElement('a-sphere');
-    sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
-    sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
-    nodeEntity.appendChild(sphere);
-
-    const text = document.createElement('a-text');
-    text.setAttribute('value', title);
-    text.setAttribute('position', '0 1.2 0'); // Position the label higher above the node
-    text.setAttribute('scale', '1.5 1.5 1.5'); // Increase text size for readability
-    text.setAttribute('align', 'center');
-    text.setAttribute('color', 'white'); // Bright color for better contrast
-    text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
-    text.setAttribute('side', 'double'); // Make text visible from both sides
-    text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
-
-    // Specify a font (e.g., using a Google Fonts URL or the default A-Frame font)
-    text.setAttribute('font', 'https://cdn.aframe.io/fonts/mozillavr.fnt'); // Use Mozilla VR font
-
-    nodeEntity.appendChild(text);
-
-    nodeElements.set(id, nodeEntity);
-    return nodeEntity;
+function createLine(start, end, startId, endId) {
+    const line = document.createElement('a-entity');
+    line.setAttribute('line', {
+        start: start,
+        end: end,
+        color: '#666666',
+        opacity: 0.3  // More subtle connections
+    });
+    
+    connections.push({
+        element: line,
+        startId: startId,
+        endId: endId
+    });
+    
+    return line;
 }
 
-
-
-        function createLine(start, end, startId, endId) {
-            const line = document.createElement('a-entity');
-            line.setAttribute('line', {
-                start: start,
-                end: end,
+function updateLines() {
+    connections.forEach(connection => {
+        const startNode = nodeElements.get(connection.startId);
+        const endNode = nodeElements.get(connection.endId);
+        
+        if (startNode && endNode) {
+            const startPos = startNode.getAttribute('position');
+            const endPos = endNode.getAttribute('position');
+            
+            connection.element.setAttribute('line', {
+                start: `${startPos.x} ${startPos.y} ${startPos.z}`,
+                end: `${endPos.x} ${endPos.y} ${endPos.z}`,
                 color: '#666666',
                 opacity: 0.3  // More subtle connections
             });
-            
-            connections.push({
-                element: line,
-                startId: startId,
-                endId: endId
-            });
-            
-            return line;
         }
-
-        function updateLines() {
-            connections.forEach(connection => {
-                const startNode = nodeElements.get(connection.startId);
-                const endNode = nodeElements.get(connection.endId);
-                
-                if (startNode && endNode) {
-                    const startPos = startNode.getAttribute('position');
-                    const endPos = endNode.getAttribute('position');
-                    
-                    connection.element.setAttribute('line', {
-                        start: `${startPos.x} ${startPos.y} ${startPos.z}`,
-                        end: `${endPos.x} ${endPos.y} ${endPos.z}`,
-                        color: '#666666',
-                        opacity: 0.3  // More subtle connections
-                    });
-                }
-            });
-        }
+    });
+}
 
         function createCircularLayout() {
             const container = document.querySelector('#nodes');
