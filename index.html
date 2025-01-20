@@ -291,81 +291,127 @@
         let nodeElements = new Map();
         let simulation;
 
- function createForceSimulation() {
-    const nodes = [];
-    const links = [];
-
-    // Create nodes
-    items.forEach(item => {
-        nodes.push({
-            id: item.id,
-            title: item.title,
-            isTag: false,
-            x: Math.random() * 20 - 10,  // Larger initial spread
-            y: Math.random() * 20 - 10,
-            z: Math.random() * 20 - 10
+  function createForceSimulation() {
+        const nodes = [];
+        const links = [];
+        
+        // First, calculate connection strengths for all nodes
+        const connectionStrengths = new Map();
+        
+        // Initialize connection counts
+        items.forEach(item => {
+            connectionStrengths.set(item.id, item.tags.length);
         });
-    });
-
-    tags.forEach(tag => {
-        nodes.push({
-            id: tag,
-            title: tag,
-            isTag: true,
-            x: Math.random() * 20 - 10,  // Larger initial spread
-            y: Math.random() * 20 - 10,
-            z: Math.random() * 20 - 10
+        tags.forEach(tag => {
+            const count = items.filter(item => item.tags.includes(tag)).length;
+            connectionStrengths.set(tag, count);
         });
-    });
 
-    // Create links
-    items.forEach(item => {
-        item.tags.forEach(tag => {
-            links.push({
-                source: nodes.find(n => n.id === item.id),
-                target: nodes.find(n => n.id === tag)
+        // Find the most connected nodes to use as central points
+        const sortedNodes = Array.from(connectionStrengths.entries())
+            .sort((a, b) => b[1] - a[1]);
+        
+        // Create nodes with positioned layout
+        const centerNodes = sortedNodes.slice(0, 5); // Top 5 most connected nodes
+        const angleStep = (2 * Math.PI) / centerNodes.length;
+
+        // Position central nodes in a pentagon formation
+        centerNodes.forEach((nodeData, index) => {
+            const angle = index * angleStep;
+            const radius = 10;
+            nodes.push({
+                id: nodeData[0],
+                title: typeof nodeData[0] === 'number' 
+                    ? items.find(item => item.id === nodeData[0])?.title 
+                    : nodeData[0],
+                isTag: typeof nodeData[0] === 'string',
+                size: calculateNodeSize(nodeData[0]),
+                x: radius * Math.cos(angle),
+                y: 0,
+                z: radius * Math.sin(angle),
+                connections: nodeData[1]
             });
         });
-    });
 
-    // Create simulation
-    const sim = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links)
-            .distance(20)        // Larger link distance
-            .strength(0.02))     // Much weaker link strength
-        .force("charge", d3.forceManyBody()
-            .strength(-1)        // Much weaker repulsion
-            .distanceMax(100))   // Longer range of repulsion
-        .force("center", d3.forceCenter(0, 0)
-            .strength(0.01))     // Extremely weak centering force
-        .force("collide", d3.forceCollide(1)
-            .strength(0.1))      // Very light collision
-        .velocityDecay(0.9)      // High decay for very slow movement
-        .alphaMin(0.01)          // Minimum energy for slow cooling
-        .alphaDecay(0.002)       // Very slow cooling
-        .alpha(0.2);             // Lower starting alpha (initial energy)
+        // Position remaining nodes relative to their most strong connection
+        const remainingNodes = sortedNodes.slice(5);
+        remainingNodes.forEach(nodeData => {
+            // Find strongest connection among central nodes
+            let strongestConnection = centerNodes[0];
+            let connectionStrength = 0;
+            
+            centerNodes.forEach(centerNode => {
+                const strength = calculateConnectionStrength(nodeData[0], centerNode[0]);
+                if (strength > connectionStrength) {
+                    strongestConnection = centerNode;
+                    connectionStrength = strength;
+                }
+            });
 
-    // Optional boundary force to keep nodes within bounds
-    sim.force("box", () => {
-        const bound = 15; // Larger boundary
-        nodes.forEach(node => {
-            if (Math.abs(node.x) > bound) {
-                const force = (Math.abs(node.x) - bound) * 0.01;
-                node.x -= Math.sign(node.x) * force;
-            }
-            if (Math.abs(node.y) > bound) {
-                const force = (Math.abs(node.y) - bound) * 0.01;
-                node.y -= Math.sign(node.y) * force;
-            }
-            if (Math.abs(node.z) > bound) {
-                const force = (Math.abs(node.z) - bound) * 0.01;
-                node.z -= Math.sign(node.z) * force;
+            // Position node in orbit around strongest connection
+            const orbitAngle = Math.random() * 2 * Math.PI;
+            const orbitRadius = 5 + Math.random() * 5;
+            const basePos = nodes.find(n => n.id === strongestConnection[0]);
+            
+            nodes.push({
+                id: nodeData[0],
+                title: typeof nodeData[0] === 'number' 
+                    ? items.find(item => item.id === nodeData[0])?.title 
+                    : nodeData[0],
+                isTag: typeof nodeData[0] === 'string',
+                size: calculateNodeSize(nodeData[0]),
+                x: basePos.x + orbitRadius * Math.cos(orbitAngle),
+                y: basePos.y + (Math.random() * 4 - 2),
+                z: basePos.z + orbitRadius * Math.sin(orbitAngle),
+                connections: nodeData[1]
+            });
+        });
+
+        // Create links based on actual connections
+        items.forEach(item => {
+            const sourceNode = nodes.find(n => n.id === item.id);
+            if (sourceNode) {
+                item.tags.forEach(tag => {
+                    const targetNode = nodes.find(n => n.id === tag);
+                    if (targetNode) {
+                        links.push({
+                            source: sourceNode,
+                            target: targetNode,
+                            strength: calculateConnectionStrength(sourceNode.id, targetNode.id)
+                        });
+                    }
+                });
             }
         });
-    });
 
-    return sim;
-}
+        // Create enhanced force simulation
+        return d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links)
+                .distance(d => 5 + (d.source.size + d.target.size) * 3)
+                .strength(d => d.strength * 0.02))
+            .force("charge", d3.forceManyBody()
+                .strength(d => -Math.pow(d.connections, 1.5) * 2)
+                .distanceMax(50))
+            .force("center", d3.forceCenter(0, 0, 0)
+                .strength(0.001))
+            .force("collide", d3.forceCollide(d => d.size * 2)
+                .strength(0.5))
+            .velocityDecay(0.9)
+            .alphaMin(0.01)
+            .alphaDecay(0.002)
+            .alpha(0.3);
+    }
+
+    function calculateConnectionStrength(id1, id2) {
+        if (typeof id1 === 'number' && typeof id2 === 'string') {
+            // Item to tag connection
+            const item = items.find(i => i.id === id1);
+            return item && item.tags.includes(id2) ? 1 : 0;
+        } else if (typeof id1 === 'string' && typeof id2 === 'number') {
+            // Tag to item connection
+            const item = items.find(i => i.id === id2);
+            return item && item.tags.includes(id1) ? 1 : 0;
+      
 
 
 
