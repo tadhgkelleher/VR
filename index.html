@@ -280,7 +280,7 @@
   { "id": 85, "title": "Pete Smith", "tags": ["Producer", "Sting", "The Police", "Duran Duran"] }
         ];
 
-        const uniqueTags = new Set();
+                 const uniqueTags = new Set();
         items.forEach(item => {
             item.tags.forEach(tag => uniqueTags.add(tag));
         });
@@ -291,117 +291,121 @@
         let nodeElements = new Map();
         let simulation;
 
-        // Calculate node sizes based on connections
-        function calculateNodeSize(id) {
-            let connectionCount = 0;
-            if (typeof id === 'number') {
-                // For items, count their tags
-                connectionCount = items.find(item => item.id === id)?.tags.length || 0;
-            } else {
-                // For tags, count how many items use this tag
-                connectionCount = items.filter(item => item.tags.includes(id)).length;
+    function createForceSimulation() {
+    const nodes = [];
+    const links = [];
+
+    // Create nodes
+    items.forEach(item => {
+        nodes.push({
+            id: item.id,
+            title: item.title,
+            isTag: false,
+            x: Math.random() * 20 - 10,  // Larger initial spread
+            y: Math.random() * 20 - 10,
+            z: Math.random() * 20 - 10
+        });
+    });
+
+    tags.forEach(tag => {
+        nodes.push({
+            id: tag,
+            title: tag,
+            isTag: true,
+            x: Math.random() * 20 - 10,  // Larger initial spread
+            y: Math.random() * 20 - 10,
+            z: Math.random() * 20 - 10
+        });
+    });
+
+    // Create links
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
+            });
+        });
+    });
+
+    // Create simulation
+    const sim = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links)
+            .distance(20)        // Larger link distance
+            .strength(0.02))     // Much weaker link strength
+        .force("charge", d3.forceManyBody()
+            .strength(-1)        // Much weaker repulsion
+            .distanceMax(100))   // Longer range of repulsion
+        .force("center", d3.forceCenter(0, 0)
+            .strength(0.01))     // Extremely weak centering force
+        .force("collide", d3.forceCollide(1)
+            .strength(0.1))      // Very light collision
+        .velocityDecay(0.9)      // High decay for very slow movement
+        .alphaMin(0.01)          // Minimum energy for slow cooling
+        .alphaDecay(0.002)       // Very slow cooling
+        .alpha(0.2);             // Lower starting alpha (initial energy)
+
+    // Optional boundary force to keep nodes within bounds
+    sim.force("box", () => {
+        const bound = 15; // Larger boundary
+        nodes.forEach(node => {
+            if (Math.abs(node.x) > bound) {
+                const force = (Math.abs(node.x) - bound) * 0.01;
+                node.x -= Math.sign(node.x) * force;
             }
-            // Scale size based on connections (min 0.4, max 2.0)
-            return 0.4 + Math.min(connectionCount * 0.2, 1.6);
-        }
+            if (Math.abs(node.y) > bound) {
+                const force = (Math.abs(node.y) - bound) * 0.01;
+                node.y -= Math.sign(node.y) * force;
+            }
+            if (Math.abs(node.z) > bound) {
+                const force = (Math.abs(node.z) - bound) * 0.01;
+                node.z -= Math.sign(node.z) * force;
+            }
+        });
+    });
 
-        function createNode(x, y, z, title, isTag = false, id) {
-            const nodeEntity = document.createElement('a-entity');
-            nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
-            nodeEntity.setAttribute('data-id', id);
-            nodeEntity.setAttribute('class', 'node');
-            nodeEntity.setAttribute('node-interaction', '');
+    return sim;
+}
 
-            const size = calculateNodeSize(id);
-            const sphere = document.createElement('a-sphere');
-            sphere.setAttribute('radius', size);
-            sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
-            sphere.setAttribute('material', {
-                metalness: 0.3,
-                roughness: 0.6,
-                emissive: isTag ? '#441111' : '#112244',
-                emissiveIntensity: 0.2
-            });
-            nodeEntity.appendChild(sphere);
 
-            const text = document.createElement('a-text');
-            text.setAttribute('value', title);
-            text.setAttribute('position', `0 ${size + 0.6} 0`);
-            text.setAttribute('scale', '1.5 1.5 1.5');
-            text.setAttribute('align', 'center');
-            text.setAttribute('color', 'white');
-            text.setAttribute('look-at', '[camera]');
-            text.setAttribute('side', 'double');
-            nodeEntity.appendChild(text);
+function createNode(x, y, z, title, isTag = false, id) {
+    const nodeEntity = document.createElement('a-entity');
+    nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
+    nodeEntity.setAttribute('data-id', id);
 
-            nodeElements.set(id, nodeEntity);
-            return nodeEntity;
-        }
+    const sphere = document.createElement('a-sphere');
+    sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
+    sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
+    nodeEntity.appendChild(sphere);
 
-        // Updated force simulation with more space-like physics
-        function createForceSimulation() {
-            const nodes = [];
-            const links = [];
+    const text = document.createElement('a-text');
+    text.setAttribute('value', title);
+    text.setAttribute('position', '0 1.2 0'); // Position the label higher above the node
+    text.setAttribute('scale', '1.5 1.5 1.5'); // Increase text size for readability
+    text.setAttribute('align', 'center');
+    text.setAttribute('color', 'white'); // Bright color for better contrast
+    text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
+    text.setAttribute('side', 'double'); // Make text visible from both sides
+    text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
 
-            items.forEach(item => {
-                nodes.push({
-                    id: item.id,
-                    title: item.title,
-                    isTag: false,
-                    size: calculateNodeSize(item.id),
-                    x: Math.random() * 40 - 20,
-                    y: Math.random() * 40 - 20,
-                    z: Math.random() * 40 - 20
-                });
-            });
+    // Specify a font (e.g., using a Google Fonts URL or the default A-Frame font)
+    text.setAttribute('font', 'https://cdn.aframe.io/fonts/mozillavr.fnt'); // Use Mozilla VR font
 
-            tags.forEach(tag => {
-                nodes.push({
-                    id: tag,
-                    title: tag,
-                    isTag: true,
-                    size: calculateNodeSize(tag),
-                    x: Math.random() * 40 - 20,
-                    y: Math.random() * 40 - 20,
-                    z: Math.random() * 40 - 20
-                });
-            });
+    nodeEntity.appendChild(text);
 
-            items.forEach(item => {
-                item.tags.forEach(tag => {
-                    links.push({
-                        source: nodes.find(n => n.id === item.id),
-                        target: nodes.find(n => n.id === tag)
-                    });
-                });
-            });
+    nodeElements.set(id, nodeEntity);
+    return nodeEntity;
+}
 
-            return d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links)
-                    .distance(d => (d.source.size + d.target.size) * 10)
-                    .strength(0.01))
-                .force("charge", d3.forceManyBody()
-                    .strength(d => -Math.pow(d.size, 2) * 5)
-                    .distanceMax(100))
-                .force("center", d3.forceCenter(0, 0)
-                    .strength(0.001))
-                .force("collide", d3.forceCollide(d => d.size * 2)
-                    .strength(0.5))
-                .velocityDecay(0.9)
-                .alphaMin(0.01)
-                .alphaDecay(0.002)
-                .alpha(0.3);
-        }
 
-        // Previous functions for creating lines and updating remain mostly the same
+
         function createLine(start, end, startId, endId) {
             const line = document.createElement('a-entity');
             line.setAttribute('line', {
                 start: start,
                 end: end,
-                color: '#4488ff',
-                opacity: 0.2,
-                visible: true
+                color: '#666666',
+                opacity: 0.3  // More subtle connections
             });
             
             connections.push({
