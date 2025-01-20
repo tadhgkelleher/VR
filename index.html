@@ -325,7 +325,7 @@ function createForceSimulation() {
   // Create simulation with adjusted forces
   const sim = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links)
-      .distance(50)        // Increased link distance
+      .distance(5)        // Increased link distance
       .strength(0.5))      // Stronger links to maintain structure
     .force("charge", d3.forceManyBody()
       .strength(-100)      // Much stronger repulsion
