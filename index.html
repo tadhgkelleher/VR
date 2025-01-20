@@ -291,94 +291,80 @@
         let nodeElements = new Map();
         let simulation;
 
-  function createForceSimulation(items, tags, options = {}) {
+ function createForceSimulation() {
     const nodes = [];
     const links = [];
 
-    // Default simulation settings with options for customization
-    const settings = {
-        initialSpread: 20, // Initial random position range
-        linkDistance: 30, // Distance between connected nodes
-        linkStrength: 0.05, // Strength of link force
-        chargeStrength: -2, // Strength of repulsion between nodes
-        chargeDistanceMax: 200, // Maximum distance for repulsion
-        centerStrength: 0.05, // Centering force strength
-        collisionRadius: 1.5, // Radius for collision force
-        collisionStrength: 0.2, // Strength of collision force
-        velocityDecay: 0.8, // Velocity decay for smooth slowing
-        alphaMin: 0.01, // Minimum energy threshold
-        alphaDecay: 0.005, // Cooling rate
-        alphaStart: 0.3, // Initial energy level
-        boundarySize: 50, // Boundary box size
-        boundaryForce: 0.02, // Force to keep nodes within boundaries
-        ...options // Allow customization via the options parameter
-    };
-
-    // Helper function to create nodes
-    function addNode(id, title, isTag) {
+    // Create nodes
+    items.forEach(item => {
         nodes.push({
-            id,
-            title,
-            isTag,
-            x: (Math.random() * settings.initialSpread * 2) - settings.initialSpread,
-            y: (Math.random() * settings.initialSpread * 2) - settings.initialSpread,
-            z: (Math.random() * settings.initialSpread * 2) - settings.initialSpread
+            id: item.id,
+            title: item.title,
+            isTag: false,
+            x: Math.random() * 20 - 10,  // Larger initial spread
+            y: Math.random() * 20 - 10,
+            z: Math.random() * 20 - 10
         });
-    }
+    });
 
-    // Add item nodes
-    items.forEach(item => addNode(item.id, item.title, false));
+    tags.forEach(tag => {
+        nodes.push({
+            id: tag,
+            title: tag,
+            isTag: true,
+            x: Math.random() * 20 - 10,  // Larger initial spread
+            y: Math.random() * 20 - 10,
+            z: Math.random() * 20 - 10
+        });
+    });
 
-    // Add tag nodes
-    tags.forEach(tag => addNode(tag, tag, true));
-
-    // Create links between items and tags
+    // Create links
     items.forEach(item => {
         item.tags.forEach(tag => {
-            const source = nodes.find(node => node.id === item.id);
-            const target = nodes.find(node => node.id === tag);
-            if (source && target) {
-                links.push({ source, target });
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
+            });
+        });
+    });
+
+    // Create simulation
+    const sim = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links)
+            .distance(100)        // Larger link distance
+            .strength(0.02))     // Much weaker link strength
+        .force("charge", d3.forceManyBody()
+            .strength(-1)        // Much weaker repulsion
+            .distanceMax(100))   // Longer range of repulsion
+        .force("center", d3.forceCenter(0, 0)
+            .strength(0.01))     // Extremely weak centering force
+        .force("collide", d3.forceCollide(1)
+            .strength(0.1))      // Very light collision
+        .velocityDecay(0.9)      // High decay for very slow movement
+        .alphaMin(0.01)          // Minimum energy for slow cooling
+        .alphaDecay(0.002)       // Very slow cooling
+        .alpha(0.2);             // Lower starting alpha (initial energy)
+
+    // Optional boundary force to keep nodes within bounds
+    sim.force("box", () => {
+        const bound = 15; // Larger boundary
+        nodes.forEach(node => {
+            if (Math.abs(node.x) > bound) {
+                const force = (Math.abs(node.x) - bound) * 0.01;
+                node.x -= Math.sign(node.x) * force;
+            }
+            if (Math.abs(node.y) > bound) {
+                const force = (Math.abs(node.y) - bound) * 0.01;
+                node.y -= Math.sign(node.y) * force;
+            }
+            if (Math.abs(node.z) > bound) {
+                const force = (Math.abs(node.z) - bound) * 0.01;
+                node.z -= Math.sign(node.z) * force;
             }
         });
     });
 
-    // Create the force simulation
-    const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links)
-            .distance(settings.linkDistance)
-            .strength(settings.linkStrength))
-        .force("charge", d3.forceManyBody()
-            .strength(settings.chargeStrength)
-            .distanceMax(settings.chargeDistanceMax))
-        .force("center", d3.forceCenter(0, 0)
-            .strength(settings.centerStrength))
-        .force("collide", d3.forceCollide(settings.collisionRadius)
-            .strength(settings.collisionStrength))
-        .velocityDecay(settings.velocityDecay)
-        .alpha(settings.alphaStart)
-        .alphaMin(settings.alphaMin)
-        .alphaDecay(settings.alphaDecay);
-
-    // Optional boundary force to keep nodes within a specified box
-    if (settings.boundarySize) {
-        simulation.force("boundary", () => {
-            const bound = settings.boundarySize;
-            nodes.forEach(node => {
-                if (Math.abs(node.x) > bound) {
-                    node.x -= Math.sign(node.x) * (Math.abs(node.x) - bound) * settings.boundaryForce;
-                }
-                if (Math.abs(node.y) > bound) {
-                    node.y -= Math.sign(node.y) * (Math.abs(node.y) - bound) * settings.boundaryForce;
-                }
-                if (Math.abs(node.z) > bound) {
-                    node.z -= Math.sign(node.z) * (Math.abs(node.z) - bound) * settings.boundaryForce;
-                }
-            });
-        });
-    }
-
-    return simulation;
+    return sim;
 }
 
 
