@@ -322,38 +322,38 @@ function createForceSimulation() {
     });
   });
 
-  // Create simulation with adjusted forces
+  // Create simulation with gentler forces
   const sim = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links)
-      .distance(5)        // Increased link distance
-      .strength(0.5))      // Stronger links to maintain structure
+      .distance(30)        // Moderate link distance
+      .strength(0.2))      // Gentler link strength
     .force("charge", d3.forceManyBody()
-      .strength(-100)      // Much stronger repulsion
-      .distanceMax(20))   // Increased range of repulsion
+      .strength(-30)       // Moderate repulsion
+      .distanceMax(100))   // Limited range of repulsion
     .force("center", d3.forceCenter(0, 0)
-      .strength(0.05))     // Weaker centering force to allow spread
+      .strength(0.1))      // Moderate centering force
     .force("collide", d3.forceCollide()
-      .radius(3)          // Increased collision radius
-      .strength(0.5))     // Stronger collision avoidance
-    .velocityDecay(0.7)   // Lower decay for more movement
+      .radius(2)          // Small collision radius
+      .strength(0.2))     // Gentle collision avoidance
+    .velocityDecay(0.8)   // Moderate decay
     .alphaMin(0.001)      // Lower minimum energy
-    .alphaDecay(0.001)    // Slower cooling
-    .alpha(1);            // Full initial energy
+    .alphaDecay(0.005)    // Moderate cooling
+    .alpha(0.3);          // Lower initial energy
 
-  // Modified boundary force with larger bounds
+  // Gentler boundary force
   sim.force("box", () => {
-    const bound = 30;     // Increased boundary
+    const bound = 20;     // Moderate boundary
     nodes.forEach(node => {
       if (Math.abs(node.x) > bound) {
-        const force = (Math.abs(node.x) - bound) * 0.05;
+        const force = (Math.abs(node.x) - bound) * 0.02;
         node.x -= Math.sign(node.x) * force;
       }
       if (Math.abs(node.y) > bound) {
-        const force = (Math.abs(node.y) - bound) * 0.05;
+        const force = (Math.abs(node.y) - bound) * 0.02;
         node.y -= Math.sign(node.y) * force;
       }
       if (Math.abs(node.z) > bound) {
-        const force = (Math.abs(node.z) - bound) * 0.05;
+        const force = (Math.abs(node.z) - bound) * 0.02;
         node.z -= Math.sign(node.z) * force;
       }
     });
@@ -361,7 +361,6 @@ function createForceSimulation() {
 
   return sim;
 }
-
 
 
 function createNode(x, y, z, title, isTag = false, id) {
