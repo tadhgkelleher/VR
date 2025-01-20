@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
-<!-- [Previous head and style sections remain the same] -->
 <head>
-    <title>VR Connections Graph</title>
+    <title>Space Connections Graph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
@@ -33,31 +32,38 @@
 </head>
 <body>
     <div class="controls">
-        <h2>VR Connections Graph</h2>
-        <p>Use VR headset or mouse to explore</p>
+        <h2>Space Network Explorer</h2>
+        <p>WASD/Arrow keys to move</p>
+        <p>Mouse drag to look around</p>
+        <p>Space to brake</p>
         <button class="toggle-button" onclick="togglePhysics()">Toggle Physics</button>
     </div>
     
     <a-scene>
-        <!-- Environment -->
-        <a-sky color="#1a1a1a"></a-sky>
-        <a-grid position="0 -2 0" rotation="-90 0 0" width="50" height="50" color="#333"></a-grid>
+        <!-- Enhanced Environment -->
+        <a-sky src="/api/placeholder/2048/2048" color="#000033"></a-sky>
         
-        <!-- Camera -->
-        <a-entity position="0 1.6 8">
-            <a-camera id="main-camera" look-controls wasd-controls>
+        <!-- Enhanced Camera with better movement -->
+        <a-entity position="0 0 20">
+            <a-camera id="main-camera" 
+                     look-controls="pointerLockEnabled: true"
+                     wasd-controls="acceleration: 20; fly: true">
                 <a-cursor color="#4CC3D9"></a-cursor>
             </a-camera>
         </a-entity>
         
-        <!-- Lighting -->
-        <a-light type="ambient" color="#BBB"></a-light>
-        <a-light type="directional" position="0 1 1" intensity="0.6"></a-light>
+        <!-- Enhanced Lighting -->
+        <a-light type="ambient" color="#111"></a-light>
+        <a-light type="point" position="0 0 0" intensity="0.8" color="#ffffff"></a-light>
 
+        <!-- Star particles -->
+        <a-entity id="stars"></a-entity>
+        
         <!-- Nodes container -->
         <a-entity id="nodes"></a-entity>
     </a-scene>
-   <script>
+
+    <script>
         // [Previous camera zoom controls remain the same]
         const camera = document.querySelector('#main-camera');
         const cameraEl = camera.getObject3D('camera');
