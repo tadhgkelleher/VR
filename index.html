@@ -291,7 +291,7 @@
         let nodeElements = new Map();
         let simulation;
 
-    function createForceSimulation() {
+  function createForceSimulation() {
     const nodes = [];
     const links = [];
 
@@ -300,10 +300,7 @@
         nodes.push({
             id: item.id,
             title: item.title,
-            isTag: false,
-            x: Math.random() * 20 - 10,  // Larger initial spread
-            y: Math.random() * 20 - 10,
-            z: Math.random() * 20 - 10
+            isTag: false
         });
     });
 
@@ -311,10 +308,7 @@
         nodes.push({
             id: tag,
             title: tag,
-            isTag: true,
-            x: Math.random() * 20 - 10,  // Larger initial spread
-            y: Math.random() * 20 - 10,
-            z: Math.random() * 20 - 10
+            isTag: true
         });
     });
 
@@ -322,47 +316,38 @@
     items.forEach(item => {
         item.tags.forEach(tag => {
             links.push({
-                source: nodes.find(n => n.id === item.id),
-                target: nodes.find(n => n.id === tag)
+                source: item.id,
+                target: tag
             });
         });
+    });
+
+    // Calculate the degree (number of connections) for each node
+    const nodeDegrees = {};
+    links.forEach(link => {
+        nodeDegrees[link.source] = (nodeDegrees[link.source] || 0) + 1;
+        nodeDegrees[link.target] = (nodeDegrees[link.target] || 0) + 1;
     });
 
     // Create simulation
     const sim = d3.forceSimulation(nodes)
         .force("link", d3.forceLink(links)
-            .distance(20)        // Larger link distance
-            .strength(0.02))     // Much weaker link strength
+            .id(d => d.id)
+            .distance(link => {
+                // Distance depends on the number of connections
+                const sourceDegree = nodeDegrees[link.source] || 1;
+                const targetDegree = nodeDegrees[link.target] || 1;
+                return 50 / Math.sqrt(sourceDegree + targetDegree); // Nodes with more connections stay closer
+            })
+            .strength(0.1)) // Adjust strength for tighter or looser clusters
         .force("charge", d3.forceManyBody()
-            .strength(-1)        // Much weaker repulsion
-            .distanceMax(100))   // Longer range of repulsion
-        .force("center", d3.forceCenter(0, 0)
-            .strength(0.01))     // Extremely weak centering force
-        .force("collide", d3.forceCollide(1)
-            .strength(0.1))      // Very light collision
-        .velocityDecay(0.9)      // High decay for very slow movement
-        .alphaMin(0.01)          // Minimum energy for slow cooling
-        .alphaDecay(0.002)       // Very slow cooling
-        .alpha(0.2);             // Lower starting alpha (initial energy)
-
-    // Optional boundary force to keep nodes within bounds
-    sim.force("box", () => {
-        const bound = 15; // Larger boundary
-        nodes.forEach(node => {
-            if (Math.abs(node.x) > bound) {
-                const force = (Math.abs(node.x) - bound) * 0.01;
-                node.x -= Math.sign(node.x) * force;
-            }
-            if (Math.abs(node.y) > bound) {
-                const force = (Math.abs(node.y) - bound) * 0.01;
-                node.y -= Math.sign(node.y) * force;
-            }
-            if (Math.abs(node.z) > bound) {
-                const force = (Math.abs(node.z) - bound) * 0.01;
-                node.z -= Math.sign(node.z) * force;
-            }
-        });
-    });
+            .strength(d => -30 * (nodeDegrees[d.id] || 1))) // Stronger repulsion for more connected nodes
+        .force("center", d3.forceCenter(0, 0)) // Keeps nodes centered in the view
+        .force("collide", d3.forceCollide(1.5)) // Avoids node overlap
+        .velocityDecay(0.9) // Smooth movement
+        .alphaMin(0.01) // Minimum energy for cooling
+        .alphaDecay(0.002) // Slow cooling
+        .alpha(1); // High initial energy to separate nodes
 
     return sim;
 }
