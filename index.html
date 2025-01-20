@@ -347,7 +347,7 @@
 
     // Optional boundary force to keep nodes within bounds
     sim.force("box", () => {
-        const bound = 15; // Larger boundary
+        const bound = 30; // Larger boundary
         nodes.forEach(node => {
             if (Math.abs(node.x) > bound) {
                 const force = (Math.abs(node.x) - bound) * 0.01;
