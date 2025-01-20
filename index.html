@@ -291,76 +291,82 @@
         let nodeElements = new Map();
         let simulation;
 
-function createForceSimulation() {
-  const nodes = [];
-  const links = [];
+ function createForceSimulation() {
+    const nodes = [];
+    const links = [];
 
-  // Create nodes - without initial random positions
-  items.forEach(item => {
-    nodes.push({
-      id: item.id,
-      title: item.title,
-      isTag: false
+    // Create nodes
+    items.forEach(item => {
+        nodes.push({
+            id: item.id,
+            title: item.title,
+            isTag: false,
+            x: Math.random() * 20 - 10,  // Larger initial spread
+            y: Math.random() * 20 - 10,
+            z: Math.random() * 20 - 10
+        });
     });
-  });
 
-  tags.forEach(tag => {
-    nodes.push({
-      id: tag,
-      title: tag,
-      isTag: true
+    tags.forEach(tag => {
+        nodes.push({
+            id: tag,
+            title: tag,
+            isTag: true,
+            x: Math.random() * 20 - 10,  // Larger initial spread
+            y: Math.random() * 20 - 10,
+            z: Math.random() * 20 - 10
+        });
     });
-  });
 
-  // Create links
-  items.forEach(item => {
-    item.tags.forEach(tag => {
-      links.push({
-        source: nodes.find(n => n.id === item.id),
-        target: nodes.find(n => n.id === tag)
-      });
+    // Create links
+    items.forEach(item => {
+        item.tags.forEach(tag => {
+            links.push({
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
+            });
+        });
     });
-  });
 
-  // Create simulation with gentler forces
-  const sim = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links)
-      .distance(30)        // Moderate link distance
-      .strength(0.2))      // Gentler link strength
-    .force("charge", d3.forceManyBody()
-      .strength(-30)       // Moderate repulsion
-      .distanceMax(100))   // Limited range of repulsion
-    .force("center", d3.forceCenter(0, 0)
-      .strength(0.1))      // Moderate centering force
-    .force("collide", d3.forceCollide()
-      .radius(2)          // Small collision radius
-      .strength(0.2))     // Gentle collision avoidance
-    .velocityDecay(0.8)   // Moderate decay
-    .alphaMin(0.001)      // Lower minimum energy
-    .alphaDecay(0.005)    // Moderate cooling
-    .alpha(0.3);          // Lower initial energy
+    // Create simulation
+    const sim = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links)
+            .distance(20)        // Larger link distance
+            .strength(0.02))     // Much weaker link strength
+        .force("charge", d3.forceManyBody()
+            .strength(-1)        // Much weaker repulsion
+            .distanceMax(100))   // Longer range of repulsion
+        .force("center", d3.forceCenter(0, 0)
+            .strength(0.01))     // Extremely weak centering force
+        .force("collide", d3.forceCollide(1)
+            .strength(0.1))      // Very light collision
+        .velocityDecay(0.9)      // High decay for very slow movement
+        .alphaMin(0.01)          // Minimum energy for slow cooling
+        .alphaDecay(0.002)       // Very slow cooling
+        .alpha(0.2);             // Lower starting alpha (initial energy)
 
-  // Gentler boundary force
-  sim.force("box", () => {
-    const bound = 20;     // Moderate boundary
-    nodes.forEach(node => {
-      if (Math.abs(node.x) > bound) {
-        const force = (Math.abs(node.x) - bound) * 0.02;
-        node.x -= Math.sign(node.x) * force;
-      }
-      if (Math.abs(node.y) > bound) {
-        const force = (Math.abs(node.y) - bound) * 0.02;
-        node.y -= Math.sign(node.y) * force;
-      }
-      if (Math.abs(node.z) > bound) {
-        const force = (Math.abs(node.z) - bound) * 0.02;
-        node.z -= Math.sign(node.z) * force;
-      }
+    // Optional boundary force to keep nodes within bounds
+    sim.force("box", () => {
+        const bound = 15; // Larger boundary
+        nodes.forEach(node => {
+            if (Math.abs(node.x) > bound) {
+                const force = (Math.abs(node.x) - bound) * 0.01;
+                node.x -= Math.sign(node.x) * force;
+            }
+            if (Math.abs(node.y) > bound) {
+                const force = (Math.abs(node.y) - bound) * 0.01;
+                node.y -= Math.sign(node.y) * force;
+            }
+            if (Math.abs(node.z) > bound) {
+                const force = (Math.abs(node.z) - bound) * 0.01;
+                node.z -= Math.sign(node.z) * force;
+            }
+        });
     });
-  });
 
-  return sim;
+    return sim;
 }
+
 
 
 function createNode(x, y, z, title, isTag = false, id) {
