@@ -5,8 +5,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     
-    <!-- Add custom VR movement component -->
     <script>
+        // Previous VR movement component code remains the same
         AFRAME.registerComponent('vr-movement', {
             schema: {
                 speed: { type: 'number', default: 0.1 }
@@ -59,23 +59,65 @@
             }
         });
 
-        // Node interaction component
+        // Add starfield component
+        AFRAME.registerComponent('starfield', {
+            init: function() {
+                this.stars = [];
+                this.createStars();
+            },
+            createStars: function() {
+                const geometry = new THREE.BufferGeometry();
+                const vertices = [];
+                
+                for (let i = 0; i < 2000; i++) {
+                    const x = (Math.random() - 0.5) * 2000;
+                    const y = (Math.random() - 0.5) * 2000;
+                    const z = (Math.random() - 0.5) * 2000;
+                    vertices.push(x, y, z);
+                }
+                
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                const material = new THREE.PointsMaterial({
+                    color: 0xFFFFFF,
+                    size: 2,
+                    sizeAttenuation: true
+                });
+                
+                this.starField = new THREE.Points(geometry, material);
+                this.el.setObject3D('stars', this.starField);
+            },
+            tick: function(time, delta) {
+                if (physicsEnabled) {
+                    // Rotate and move stars when physics is enabled
+                    this.starField.rotation.y += 0.0001 * delta;
+                    this.starField.rotation.x += 0.0001 * delta;
+                    
+                    // Move stars to create flying effect
+                    const positions = this.starField.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i + 2] += 0.1;  // Move stars toward viewer
+                        if (positions[i + 2] > 1000) {
+                            positions[i + 2] = -1000;  // Reset position when too close
+                        }
+                    }
+                    this.starField.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+        });
+
+        // Node interaction component with glow effect
         AFRAME.registerComponent('node-interaction', {
             init: function() {
                 this.el.addEventListener('raycaster-intersected', () => {
                     this.el.setAttribute('scale', '1.2 1.2 1.2');
+                    const sphere = this.el.querySelector('a-sphere');
+                    sphere.setAttribute('material', 'emissiveIntensity', 0.5);
                 });
                 this.el.addEventListener('raycaster-intersected-cleared', () => {
                     this.el.setAttribute('scale', '1 1 1');
+                    const sphere = this.el.querySelector('a-sphere');
+                    sphere.setAttribute('material', 'emissiveIntensity', 0.2);
                 });
-                this.el.addEventListener('click', () => {
-                    this.handleClick();
-                });
-            },
-            handleClick: function() {
-                const sphere = this.el.querySelector('a-sphere');
-                const currentEmissive = sphere.getAttribute('material').emissiveIntensity;
-                sphere.setAttribute('material', 'emissiveIntensity', currentEmissive === 0.3 ? 1.0 : 0.3);
             }
         });
     </script>
@@ -119,13 +161,9 @@
     </div>
     
     <a-scene>
-        <!-- Assets -->
-        <a-assets>
-            <img id="space" src="/api/placeholder/4096/2048" />
-        </a-assets>
-
         <!-- Environment -->
-        <a-sky color="#000033"></a-sky>
+        <a-sky color="#000011"></a-sky>
+        <a-entity starfield></a-entity>
         
         <!-- Camera Rig -->
         <a-entity id="cameraRig" position="0 1.6 5" vr-movement="speed: 0.15">
@@ -145,11 +183,10 @@
         </a-entity>
 
         <!-- Lighting -->
-        <a-light type="ambient" color="#111"></a-light>
+        <a-light type="ambient" color="#222"></a-light>
         <a-light type="point" position="0 0 0" intensity="0.8" color="#ffffff"></a-light>
 
         <!-- Containers -->
-        <a-entity id="stars"></a-entity>
         <a-entity id="nodes"></a-entity>
     </a-scene>
 
