@@ -295,13 +295,12 @@
     const nodes = [];
     const links = [];
 
-    // Create nodes with degree tracking
+    // Create nodes
     items.forEach(item => {
         nodes.push({
             id: item.id,
             title: item.title,
             isTag: false,
-            degree: 0,  // Initialize degree
             x: Math.random() * 20 - 10,  // Larger initial spread
             y: Math.random() * 20 - 10,
             z: Math.random() * 20 - 10
@@ -313,26 +312,18 @@
             id: tag,
             title: tag,
             isTag: true,
-            degree: 0,  // Initialize degree
             x: Math.random() * 20 - 10,  // Larger initial spread
             y: Math.random() * 20 - 10,
             z: Math.random() * 20 - 10
         });
     });
 
-    // Create links and update node degrees
+    // Create links
     items.forEach(item => {
         item.tags.forEach(tag => {
-            const sourceNode = nodes.find(n => n.id === item.id);
-            const targetNode = nodes.find(n => n.id === tag);
-
-            // Increment the degree for both source and target nodes
-            sourceNode.degree++;
-            targetNode.degree++;
-
             links.push({
-                source: sourceNode,
-                target: targetNode
+                source: nodes.find(n => n.id === item.id),
+                target: nodes.find(n => n.id === tag)
             });
         });
     });
@@ -340,13 +331,13 @@
     // Create simulation
     const sim = d3.forceSimulation(nodes)
         .force("link", d3.forceLink(links)
-            .distance(100)        // Larger link distance
-            .strength(0.1))       // Much weaker link strength
+            .distance(200)        // Larger link distance
+            .strength(0.1))     // Much weaker link strength
         .force("charge", d3.forceManyBody()
             .strength(-.5)        // Much weaker repulsion
-            .distanceMax(150))    // Longer range of repulsion
+            .distanceMax(150))   // Longer range of repulsion
         .force("center", d3.forceCenter(0, 0)
-            .strength(0.008))     // Extremely weak centering force
+            .strength(0.001))     // Extremely weak centering force
         .force("collide", d3.forceCollide(1)
             .strength(0.1))      // Very light collision
         .velocityDecay(0.9)      // High decay for very slow movement
@@ -376,28 +367,29 @@
     return sim;
 }
 
-function createNode(x, y, z, title, isTag = false, id, degree) {
+
+function createNode(x, y, z, title, isTag = false, id) {
     const nodeEntity = document.createElement('a-entity');
     nodeEntity.setAttribute('position', `${x} ${y} ${z}`);
     nodeEntity.setAttribute('data-id', id);
 
-    // Scale the node radius based on its degree (number of connections)
-    const radius = isTag ? 0.4 + degree * 0.1 : 0.6 + degree * 0.1; // Adjust scaling factor as needed
     const sphere = document.createElement('a-sphere');
-    sphere.setAttribute('radius', radius);  // Dynamic radius based on degree
+    sphere.setAttribute('radius', isTag ? 0.4 : 0.6);
     sphere.setAttribute('color', isTag ? '#e24a4a' : '#4a90e2');
     nodeEntity.appendChild(sphere);
 
     const text = document.createElement('a-text');
     text.setAttribute('value', title);
-    text.setAttribute('position', '0 1.2 0');
-    text.setAttribute('scale', '1.5 1.5 1.5');
+    text.setAttribute('position', '0 1.2 0'); // Position the label higher above the node
+    text.setAttribute('scale', '1.5 1.5 1.5'); // Increase text size for readability
     text.setAttribute('align', 'center');
-    text.setAttribute('color', 'white');
-    text.setAttribute('look-at', '[camera]');
-    text.setAttribute('side', 'double');
-    text.setAttribute('opacity', 0.9);
-    text.setAttribute('font', 'https://cdn.aframe.io/fonts/mozillavr.fnt');
+    text.setAttribute('color', 'white'); // Bright color for better contrast
+    text.setAttribute('look-at', '[camera]'); // Ensure the text always faces the camera
+    text.setAttribute('side', 'double'); // Make text visible from both sides
+    text.setAttribute('opacity', 0.9); // Slight transparency for subtlety
+
+    // Specify a font (e.g., using a Google Fonts URL or the default A-Frame font)
+    text.setAttribute('font', 'https://cdn.aframe.io/fonts/mozillavr.fnt'); // Use Mozilla VR font
 
     nodeEntity.appendChild(text);
 
